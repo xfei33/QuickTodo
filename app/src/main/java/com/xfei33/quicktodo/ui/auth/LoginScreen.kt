@@ -20,29 +20,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.xfei33.quicktodo.ui.todos.TodoViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (username: String) -> Unit, // 登录成功后的回调
+    onLoginSuccess: () -> Unit, // 登录成功后的回调
     onNavigateToRegister: () -> Unit, // 跳转到注册页面的回调
-    viewModel: AuthViewModel = hiltViewModel() // 使用 Hilt 注入 ViewModel
+    viewModel: AuthViewModel = hiltViewModel(),
+    todoViewModel: TodoViewModel = hiltViewModel() // 注入 TodoViewModel
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) } // 错误提示信息
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth()
-    ) {
+    Column(modifier = Modifier.padding(16.dp)) {
         // 用户名输入框
         TextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("用户名") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = errorMessage != null
+            label = { Text("用户名") }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -52,9 +48,7 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("密码") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            isError = errorMessage != null
+            visualTransformation = PasswordVisualTransformation()
         )
 
         // 错误提示
@@ -77,7 +71,8 @@ fun LoginScreen(
                     viewModel.login(username, password) { success ->
                         if (success) {
                             errorMessage = null
-                            onLoginSuccess(username) // 登录成功，跳转到主页面
+                            todoViewModel.setUsername(username) // 设置用户名
+                            onLoginSuccess() // 登录成功，调用回调
                         } else {
                             errorMessage = "用户名或密码错误"
                         }

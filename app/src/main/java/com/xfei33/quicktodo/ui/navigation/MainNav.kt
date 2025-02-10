@@ -6,12 +6,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xfei33.quicktodo.ui.auth.LoginScreen
 import com.xfei33.quicktodo.ui.auth.RegisterScreen
@@ -24,18 +24,14 @@ import com.xfei33.quicktodo.ui.todos.TodoListScreen
 @Composable
 fun MainNav() {
     val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    // 根据当前路由自动更新选中状态
-    val selectedTab = remember { mutableStateOf(getTabIndex(currentRoute)) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         bottomBar = {
             QuickTodoBottomAppBar(
-                selectedTab = selectedTab.value,
+                selectedTab = selectedTab,
                 onTabSelected = { tab ->
-                    selectedTab.value = tab
+                    selectedTab = tab
                     when (tab) {
                         0 -> navController.navigate("todos")
                         1 -> navController.navigate("focus")
@@ -52,8 +48,7 @@ fun MainNav() {
         ) {
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { username ->
-                        // 统一导航到不带参数的todos路由
+                    onLoginSuccess = {
                         navController.navigate("todos") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -66,7 +61,7 @@ fun MainNav() {
 
             composable("register") {
                 RegisterScreen(
-                    onRegisterSuccess = { username ->
+                    onRegisterSuccess = {
                         navController.navigate("todos") {
                             popUpTo("register") { inclusive = true }
                         }
@@ -79,9 +74,7 @@ fun MainNav() {
                 )
             }
 
-            // 修改为不带参数的todos路由
             composable("todos") {
-                // 通过ViewModel传递用户名（需调整ViewModel逻辑）
                 TodoListScreen()
             }
 

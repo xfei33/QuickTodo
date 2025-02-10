@@ -11,6 +11,9 @@ import com.xfei33.quicktodo.data.model.TodoItem
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
@@ -19,6 +22,13 @@ import javax.inject.Inject
 class TodoViewModel @Inject constructor(
     private val repository: TodoRepository
 ) : ViewModel() {
+    private val _username = MutableStateFlow("") // 用户名状态
+    val username: StateFlow<String> = _username.asStateFlow()
+
+    // 设置用户名
+    fun setUsername(username: String) {
+        _username.value = username
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private val _currentDate = mutableStateOf(LocalDate.now())

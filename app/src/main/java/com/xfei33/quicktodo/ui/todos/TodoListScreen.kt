@@ -30,6 +30,8 @@ import com.xfei33.quicktodo.data.model.TodoItem
 @Composable
 fun TodoListScreen(viewModel: TodoViewModel = hiltViewModel()) {
     val username by viewModel.username.collectAsState()
+    Text(text = "欢迎回来，$username")
+
     val todos by viewModel.getTodos(username).collectAsState(initial = emptyList())
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
