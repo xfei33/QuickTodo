@@ -1,6 +1,5 @@
 package com.xfei33.quicktodo.ui.auth
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,7 +31,6 @@ fun AuthScreen(navController: NavController) {
     var isLogin by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val authViewModel: AuthViewModel = viewModel()
-    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -64,8 +61,10 @@ fun AuthScreen(navController: NavController) {
             if (isLogin) {
                 authViewModel.login(username, password) { token ->
                     if (token != null) {
-                        // 登录成功，跳转到待办页面
-                        navController.navigate("todo")
+                        // 登录成功，跳转到主界面
+                        navController.navigate("main") {
+                            popUpTo("auth") { inclusive = true } // 清除导航栈
+                        }
                     } else {
                         errorMessage = "登录失败，请检查用户名和密码"
                     }
@@ -76,9 +75,10 @@ fun AuthScreen(navController: NavController) {
                         // 注册成功后自动登录
                         authViewModel.login(username, password) { token ->
                             if (token != null) {
-                                // 登录成功，跳转到待办页面
-                                navController.navigate("todo")
-                                Toast.makeText(context, "注册成功", Toast.LENGTH_SHORT).show()
+                                // 登录成功，跳转到主界面
+                                navController.navigate("main") {
+                                    popUpTo("auth") { inclusive = true } // 清除导航栈
+                                }
                             } else {
                                 errorMessage = "注册成功，但自动登录失败"
                             }
@@ -96,7 +96,7 @@ fun AuthScreen(navController: NavController) {
             Text(if (isLogin) "没有账号？注册" else "已有账号？登录")
         }
         Spacer(modifier = Modifier.height(8.dp))
-        TextButton(onClick = { navController.navigate("todo") }) {
+        TextButton(onClick = { navController.navigate("main") }) {
             Text("离线使用")
         }
         if (errorMessage != null) {
