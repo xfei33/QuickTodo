@@ -8,9 +8,9 @@ data class AuthRequest(val username: String, val password: String)
 data class AuthResponse(val token: String)
 
 interface ApiService {
-    @POST("/auth/register")
+    @POST("auth/register")
     suspend fun register(@Body request: AuthRequest): Response<Void>
 
-    @POST("/auth/login")
+    @POST("auth/login")
     suspend fun login(@Body request: AuthRequest): Response<AuthResponse>
 }

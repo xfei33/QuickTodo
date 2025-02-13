@@ -6,6 +6,7 @@ import com.xfei33.quicktodo.network.ApiService
 import com.xfei33.quicktodo.network.AuthRequest
 import com.xfei33.quicktodo.network.RetrofitClient
 import kotlinx.coroutines.launch
+import retrofit2.http.Body
 
 class AuthViewModel : ViewModel() {
     private val apiService: ApiService = RetrofitClient.apiService
@@ -28,11 +29,14 @@ class AuthViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     onResult(response.body()?.token)
                 } else {
+                    println("Login failed: ${response.errorBody()?.string()}")
                     onResult(null)
                 }
             } catch (e: Exception) {
+                println("Login error: ${e.message}")
                 onResult(null)
             }
         }
     }
+
 }
