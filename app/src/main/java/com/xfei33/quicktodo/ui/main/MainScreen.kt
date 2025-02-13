@@ -27,7 +27,7 @@ fun MainScreen() {
             startDestination = "todo",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("todo") { TodoScreen(navController) }
+            composable("todo") { TodoScreen() }
             composable("focus") { FocusScreen(navController) }
             composable("message") { MessageScreen(navController) }
             composable("profile") { ProfileScreen(navController) }

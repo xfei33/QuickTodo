@@ -1,5 +1,6 @@
 package com.xfei33.quicktodo.ui.todo
 
+import NewTodoDialog
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,24 +16,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.xfei33.quicktodo.components.AppTopBar
+import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.viewmodel.TodoViewModel
 
 @Composable
-fun TodoScreen(navController: NavController) {
+fun TodoScreen() {
     val viewModel: TodoViewModel = hiltViewModel()
     val todos by viewModel.todos.collectAsState(initial = emptyList())
+    var showDialog by remember { mutableStateOf(false) } // 控制对话框的显示和隐藏
 
     Scaffold(
-        topBar = {
-            AppTopBar(onSearchClick = { /* TODO: Implement search */ })
-        },
+        topBar = { AppTopBar(onSearchClick = { /* TODO: Search */ }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* TODO: Open new todo dialog */ }) {
+            FloatingActionButton(onClick = { showDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Todo")
             }
         }
@@ -45,9 +48,34 @@ fun TodoScreen(navController: NavController) {
             )
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(todos) { todo ->
-                    TodoCard(todo = todo, onEditClick = { /* TODO: Edit todo */ }, onDeleteClick = { viewModel.deleteTodo(it) })
+                    TodoCard(
+                        todo = todo,
+                        onEditClick = { /* TODO: Edit todo */ },
+                        onDeleteClick = { viewModel.deleteTodo(it) }
+                    )
                 }
             }
         }
     }
+
+    if (showDialog) {
+        NewTodoDialog(
+            onDismiss = { showDialog = false },
+            onConfirm = { title, description, dueDate ->
+                val newTodo = Todo(
+                    title = title,
+                    description = description,
+                    dueDate = dueDate,
+                    userId = 1, // 假设当前用户 ID 为 1
+                    priority = "Medium", // 默认优先级
+                    completed = false,
+                    tag = "General" // 默认标签
+                )
+                viewModel.addTodo(newTodo)
+                showDialog = false
+            }
+        )
+    }
 }
+
+
