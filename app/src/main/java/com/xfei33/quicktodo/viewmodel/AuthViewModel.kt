@@ -11,9 +11,8 @@ import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(
+class AuthViewModel @Inject constructor() : ViewModel() {
     private val apiService: ApiService = RetrofitClient.apiService
-) : ViewModel() {
     var token: String? = null
     var userId: Long = 0
     var isLoggedIn: Boolean = false
