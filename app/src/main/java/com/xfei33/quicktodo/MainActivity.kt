@@ -3,45 +3,58 @@ package com.xfei33.quicktodo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.xfei33.quicktodo.ui.theme.QuickTodoTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.xfei33.quicktodo.ui.auth.AuthScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            QuickTodoTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            QuickTodoApp()
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun QuickTodoApp() {
+    val navController = rememberNavController()
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        NavHost(navController = navController, startDestination = "auth") {
+            composable("auth") { AuthScreen(navController) }
+            composable("todo") { TodoScreen() }
+            composable("focus") { FocusScreen() }
+            composable("message") { MessageScreen() }
+            composable("profile") { ProfileScreen() }
+        }
+    }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    QuickTodoTheme {
-        Greeting("Android")
-    }
+fun TodoScreen() {
+    // TODO: 待办页面
+}
+
+@Composable
+fun FocusScreen() {
+    // TODO: 专注页面
+}
+
+@Composable
+fun MessageScreen() {
+    // TODO: 消息页面
+}
+
+@Composable
+fun ProfileScreen() {
+    // TODO: 我的页面
 }
