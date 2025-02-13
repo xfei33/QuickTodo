@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xfei33.quicktodo.network.ApiService
 import com.xfei33.quicktodo.network.AuthRequest
+import com.xfei33.quicktodo.network.RetrofitClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -11,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val apiService: ApiService
+    private val apiService: ApiService = RetrofitClient.apiService
 ) : ViewModel() {
     var token: String? = null
     var userId: Long = 0
