@@ -1,6 +1,5 @@
 package com.xfei33.quicktodo.ui.todo
 
-import NewTodoDialog
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -61,15 +60,15 @@ fun TodoScreen() {
     if (showDialog) {
         NewTodoDialog(
             onDismiss = { showDialog = false },
-            onConfirm = { title, description, dueDate ->
+            onConfirm = { title, description, tag, dueDate, priority ->
                 val newTodo = Todo(
                     title = title,
                     description = description,
                     dueDate = dueDate,
-                    userId = 1, // 假设当前用户 ID 为 1
-                    priority = "Medium", // 默认优先级
+                    userId = viewModel.userId, // 使用 ViewModel 中的用户 ID
+                    priority = priority,
                     completed = false,
-                    tag = "General" // 默认标签
+                    tag = tag
                 )
                 viewModel.addTodo(newTodo)
                 showDialog = false
