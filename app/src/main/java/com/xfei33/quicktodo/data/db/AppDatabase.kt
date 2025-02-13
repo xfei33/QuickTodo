@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.xfei33.quicktodo.data.converter.LocalDateTimeConverter
 import com.xfei33.quicktodo.data.dao.TodoDao
 import com.xfei33.quicktodo.model.Todo
 
@@ -12,6 +14,7 @@ import com.xfei33.quicktodo.model.Todo
     version = 1,
     exportSchema = false
 )
+@TypeConverters(LocalDateTimeConverter::class) // 注册 TypeConverter
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun todoDao(): TodoDao
