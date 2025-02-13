@@ -7,8 +7,13 @@ import androidx.room.RoomDatabase
 import com.xfei33.quicktodo.data.dao.TodoDao
 import com.xfei33.quicktodo.model.Todo
 
-@Database(entities = [Todo::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Todo::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun todoDao(): TodoDao
 
     companion object {
@@ -20,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "todo_database"
+                    "quicktodo_db"
                 ).build()
                 INSTANCE = instance
                 instance

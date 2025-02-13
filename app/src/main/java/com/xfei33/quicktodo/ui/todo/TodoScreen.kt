@@ -30,7 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.xfei33.quicktodo.components.AppBottomBar
 import com.xfei33.quicktodo.model.Todo
@@ -38,7 +38,7 @@ import com.xfei33.quicktodo.viewmodel.TodoViewModel
 
 @Composable
 fun TodoScreen(navController: NavController) {
-    val viewModel: TodoViewModel = viewModel()
+    val viewModel: TodoViewModel = hiltViewModel()
     val todos by viewModel.todos.collectAsState(initial = emptyList())
 
     Scaffold(

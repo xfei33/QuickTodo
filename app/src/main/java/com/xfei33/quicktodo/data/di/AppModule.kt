@@ -1,7 +1,6 @@
 package com.xfei33.quicktodo.data.di
 
 import android.content.Context
-import com.xfei33.quicktodo.data.dao.TodoDao
 import com.xfei33.quicktodo.data.db.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -20,7 +19,5 @@ object AppModule {
     }
 
     @Provides
-    fun provideTodoDao(appDatabase: AppDatabase): TodoDao {
-        return appDatabase.todoDao()
-    }
+    fun provideTodoDao(appDatabase: AppDatabase) = appDatabase.todoDao()
 }
