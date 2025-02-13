@@ -13,12 +13,9 @@ import javax.inject.Inject
 @HiltViewModel
 class TodoViewModel @Inject constructor(
     private val todoDao: TodoDao,
-    private val authViewModel: AuthViewModel
 ) : ViewModel() {
     private val _todos = MutableStateFlow<List<Todo>>(emptyList())
     val todos: StateFlow<List<Todo>> get() = _todos
-    val userId: Int
-        get() = if (authViewModel.isLoggedIn) authViewModel.userId else 0
 
     init {
         loadTodos()

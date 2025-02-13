@@ -23,12 +23,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xfei33.quicktodo.components.AppTopBar
 import com.xfei33.quicktodo.model.Todo
+import com.xfei33.quicktodo.viewmodel.AuthViewModel
 import com.xfei33.quicktodo.viewmodel.TodoViewModel
 
 @Composable
 fun TodoScreen() {
-    val viewModel: TodoViewModel = hiltViewModel()
-    val todos by viewModel.todos.collectAsState(initial = emptyList())
+    val todoViewModel: TodoViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val todos by todoViewModel.todos.collectAsState(initial = emptyList())
     var showDialog by remember { mutableStateOf(false) } // 控制对话框的显示和隐藏
 
     Scaffold(
@@ -50,7 +52,7 @@ fun TodoScreen() {
                     TodoCard(
                         todo = todo,
                         onEditClick = { /* TODO: Edit todo */ },
-                        onDeleteClick = { viewModel.deleteTodo(it) }
+                        onDeleteClick = { todoViewModel.deleteTodo(it) }
                     )
                 }
             }
@@ -65,12 +67,12 @@ fun TodoScreen() {
                     title = title,
                     description = description,
                     dueDate = dueDate,
-                    userId = viewModel.userId, // 使用 ViewModel 中的用户 ID
+                    userId = authViewModel.userId, // 使用 ViewModel 中的用户 ID
                     priority = priority,
                     completed = false,
                     tag = tag
                 )
-                viewModel.addTodo(newTodo)
+                todoViewModel.addTodo(newTodo)
                 showDialog = false
             }
         )
