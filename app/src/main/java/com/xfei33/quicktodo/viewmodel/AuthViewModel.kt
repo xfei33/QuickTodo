@@ -13,6 +13,9 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val apiService: ApiService
 ) : ViewModel() {
+    var token: String? = null
+    var userId: Long = 0
+    var isLoggedIn: Boolean = false
 
     fun register(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
@@ -41,7 +44,10 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
-                    onResult(response.body()?.token)
+                    isLoggedIn = true
+                    token = response.body()?.token
+                    userId = response.body()?.userId?: 0
+                    onResult(token)
                 } else {
                     println("Login failed: ${response.errorBody()?.string()}")
                     onResult(null)
