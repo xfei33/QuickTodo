@@ -23,7 +23,7 @@ class TodoViewModel @Inject constructor(
 
     private fun loadTodos() {
         viewModelScope.launch {
-            todoDao.getTodosByUser(1).collect { todos ->
+            todoDao.getTodosByUser(0).collect { todos ->
                 _todos.value = todos
             }
         }
