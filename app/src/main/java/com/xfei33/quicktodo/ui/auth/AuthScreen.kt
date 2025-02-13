@@ -7,13 +7,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.xfei33.quicktodo.viewmodel.AuthViewModel
 
 @Composable
 fun AuthScreen(navController: NavController) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLogin by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val authViewModel: AuthViewModel = viewModel()
 
     Column(
         modifier = Modifier
@@ -42,9 +46,23 @@ fun AuthScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = {
             if (isLogin) {
-                // TODO: 调用登录 API
+                authViewModel.login(username, password) { token ->
+                    if (token != null) {
+                        // 登录成功，跳转到待办页面
+                        navController.navigate("todo")
+                    } else {
+                        errorMessage = "登录失败，请检查用户名和密码"
+                    }
+                }
             } else {
-                // TODO: 调用注册 API
+                authViewModel.register(username, password) { success ->
+                    if (success) {
+                        errorMessage = "注册成功，请登录"
+                        isLogin = true
+                    } else {
+                        errorMessage = "注册失败，请重试"
+                    }
+                }
             }
         }) {
             Text(if (isLogin) "登录" else "注册")
@@ -56,6 +74,13 @@ fun AuthScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = { navController.navigate("todo") }) {
             Text("离线使用")
+        }
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }
