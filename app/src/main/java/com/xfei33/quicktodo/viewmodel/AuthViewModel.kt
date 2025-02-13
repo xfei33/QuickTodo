@@ -6,18 +6,29 @@ import com.xfei33.quicktodo.network.ApiService
 import com.xfei33.quicktodo.network.AuthRequest
 import com.xfei33.quicktodo.network.RetrofitClient
 import kotlinx.coroutines.launch
-import retrofit2.http.Body
+import org.json.JSONObject
 
 class AuthViewModel : ViewModel() {
     private val apiService: ApiService = RetrofitClient.apiService
 
-    fun register(username: String, password: String, onResult: (Boolean) -> Unit) {
+    fun register(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = apiService.register(AuthRequest(username, password))
-                onResult(response.isSuccessful)
+                if (response.isSuccessful) {
+                    onResult(true, "注册成功")
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = if (errorBody != null) {
+                        val jsonObject = JSONObject(errorBody)
+                        jsonObject.getString("error")
+                    } else {
+                        "注册失败"
+                    }
+                    onResult(false, errorMessage)
+                }
             } catch (e: Exception) {
-                onResult(false)
+                onResult(false, "网络错误：${e.message}")
             }
         }
     }
@@ -38,5 +49,6 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
-
 }
+
+
