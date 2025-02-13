@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xfei33.quicktodo.network.ApiService
 import com.xfei33.quicktodo.network.AuthRequest
-import com.xfei33.quicktodo.network.RetrofitClient
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
-    private val apiService: ApiService = RetrofitClient.apiService
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val apiService: ApiService
+) : ViewModel() {
 
     fun register(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
