@@ -11,7 +11,7 @@ import com.xfei33.quicktodo.model.Todo
 
 @Database(
     entities = [Todo::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(LocalDateTimeConverter::class) // 注册 TypeConverter
@@ -29,7 +29,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "quicktodo_db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

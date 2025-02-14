@@ -7,6 +7,7 @@ import com.xfei33.quicktodo.data.dao.TodoDao
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -27,16 +28,22 @@ class TodoViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long>(0L)
     val userId: StateFlow<Long> get() = _userId
 
-    private var lastSyncTime: LocalDateTime = LocalDateTime.MIN
+    private val _token = MutableStateFlow<String?>("")
+    val token: StateFlow<String?> get() = _token
+
+    private var lastSyncTime: LocalDateTime = LocalDateTime.parse("0001-01-01T00:00:00")
 
     init {
-        loadTodos()
-        syncData() // 初始化时同步数据
+        viewModelScope.launch() {
+            _userId.value = userPreferences.userId.first()!!
+            _token.value = userPreferences.token.first()
+            syncData()
+            loadTodos()
+        }
     }
 
     private fun loadTodos() {
-        viewModelScope.launch {
-            _userId.value = userPreferences.userId.first()!!
+        viewModelScope.launch(Dispatchers.IO) {
             todoDao.getNotDeletedTodosByUser(userId.value).collect { todos ->
                 _todos.value = todos
             }
@@ -45,9 +52,9 @@ class TodoViewModel @Inject constructor(
 
     // 增量同步
     private fun syncData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             // 从服务端获取增量数据
-            val incrementalData = apiService.getIncrementalData(userId.value, lastSyncTime)
+            val incrementalData = apiService.getIncrementalData(token.value!!, userId.value, lastSyncTime)
             incrementalData.body()?.forEach { todo ->
                 if (todo.deleted) {
                     todoDao.delete(todo) // 删除标记为已删除的待办事项
@@ -58,7 +65,7 @@ class TodoViewModel @Inject constructor(
 
             // 上传客户端的增量数据
             val localIncrementalData = todoDao.getIncrementalData(userId.value, lastSyncTime)
-            apiService.uploadIncrementalData(userId.value, localIncrementalData)
+            apiService.uploadIncrementalData(token.value!!, userId.value, localIncrementalData)
 
             // 更新最后同步时间
             lastSyncTime = LocalDateTime.now()
@@ -81,7 +88,6 @@ class TodoViewModel @Inject constructor(
     fun deleteTodo(todo: Todo) {
         viewModelScope.launch {
             todo.deleted = true
-            todoDao.delete(todo)
         }
     }
 }
