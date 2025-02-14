@@ -59,8 +59,8 @@ fun AuthScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = {
             if (isLogin) {
-                authViewModel.login(username, password) { token ->
-                    if (token != null) {
+                authViewModel.login(username, password) { isLogin ->
+                    if (isLogin == true) {
                         // 登录成功，跳转到主界面
                         navController.navigate("main") {
                             popUpTo("auth") { inclusive = true } // 清除导航栈
@@ -73,8 +73,8 @@ fun AuthScreen(navController: NavController) {
                 authViewModel.register(username, password) { success, message ->
                     if (success) {
                         // 注册成功后自动登录
-                        authViewModel.login(username, password) { token ->
-                            if (token != null) {
+                        authViewModel.login(username, password) { isLogin ->
+                            if (isLogin == true) {
                                 // 登录成功，跳转到主界面
                                 navController.navigate("main") {
                                     popUpTo("auth") { inclusive = true } // 清除导航栈
