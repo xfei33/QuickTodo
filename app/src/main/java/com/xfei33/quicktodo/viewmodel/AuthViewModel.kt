@@ -69,9 +69,9 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
-                    val token = response.body()?.token
+                    val token = "Bearer " + response.body()?.token
                     val userId = response.body()?.userId
-                    userPreferences.saveToken(token!!)
+                    userPreferences.saveToken(token)
                     userPreferences.saveUserId(userId!!)
                     _token.value = token
                     _userId.value = userId
