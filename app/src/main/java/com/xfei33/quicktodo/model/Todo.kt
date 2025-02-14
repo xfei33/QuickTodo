@@ -14,5 +14,6 @@ data class Todo(
     val priority: String?,
     val completed: Boolean = false,
     val tag: String,
-    val lastModified: LocalDateTime = LocalDateTime.now()
+    val lastModified: LocalDateTime = LocalDateTime.now(),
+    var deleted: Boolean = false
 )
