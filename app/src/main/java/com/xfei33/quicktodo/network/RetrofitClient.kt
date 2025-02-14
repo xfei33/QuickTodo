@@ -1,12 +1,18 @@
 package com.xfei33.quicktodo.network
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.xfei33.quicktodo.BuildConfig.BASE_URL
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.LocalDateTime
 
 object RetrofitClient {
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
+        .create()
 
     val apiService: ApiService by lazy {
         val logging = HttpLoggingInterceptor().apply {
@@ -20,7 +26,7 @@ object RetrofitClient {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ApiService::class.java)
     }
