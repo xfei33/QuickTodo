@@ -2,20 +2,45 @@ package com.xfei33.quicktodo.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xfei33.quicktodo.data.UserPreferences
 import com.xfei33.quicktodo.network.ApiService
 import com.xfei33.quicktodo.network.AuthRequest
-import com.xfei33.quicktodo.network.RetrofitClient
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor() : ViewModel() {
-    private val apiService: ApiService = RetrofitClient.apiService
-    var token: String? = null
-    var userId: Long = 0
-    var isLoggedIn: Boolean = false
+class AuthViewModel @Inject constructor(
+    private val apiService: ApiService,
+    private val userPreferences: UserPreferences
+) : ViewModel() {
+//    private val apiService: ApiService = RetrofitClient.apiService
+
+    // 登录状态
+    private val _isLoggedIn = MutableStateFlow<Boolean>(false)
+    val isLoggedIn: StateFlow<Boolean> get() = _isLoggedIn
+
+    // 用户id
+    private val _userId = MutableStateFlow<Long>(0L)
+    val userId: StateFlow<Long> get() = _userId
+
+    // token
+    private val _token = MutableStateFlow<String>("")
+    val token: StateFlow<String?> get() = _token
+
+    init {
+        viewModelScope.launch {
+            _token.value = userPreferences.token.toString()
+            _userId.value = userPreferences.userId.first()!!
+            if(_userId.value > 0) {
+                _isLoggedIn.value = true
+            }
+        }
+    }
 
     fun register(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
@@ -39,23 +64,36 @@ class AuthViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun login(username: String, password: String, onResult: (String?) -> Unit) {
+    fun login(username: String, password: String, onResult: (Boolean?) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
-                    isLoggedIn = true
-                    token = response.body()?.token
-                    userId = response.body()?.userId?: 0
-                    onResult(token)
+                    val token = response.body()?.token
+                    val userId = response.body()?.userId
+                    userPreferences.saveToken(token!!)
+                    userPreferences.saveUserId(userId!!)
+                    _token.value = token
+                    _userId.value = userId
+                    _isLoggedIn.value = true
+                    onResult(true)
                 } else {
                     println("Login failed: ${response.errorBody()?.string()}")
-                    onResult(null)
+                    onResult(false)
                 }
             } catch (e: Exception) {
                 println("Login error: ${e.message}")
-                onResult(null)
+                onResult(false)
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            userPreferences.clear()
+            _isLoggedIn.value = false
+            _userId.value = 0L
+            _token.value = ""
         }
     }
 }

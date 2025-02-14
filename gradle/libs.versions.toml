@@ -1,6 +1,7 @@
 [versions]
 agp = "8.8.0"
 converterGson = "2.9.0"
+datastorePreferences = "1.1.2"
 desugar_jdk_libs = "2.1.4"
 hiltAndroidVersion = "2.55"
 hiltNavigationCompose = "1.2.0"
@@ -19,10 +20,12 @@ roomKtx = "2.5.2"
 roomRuntime = "2.6.1"
 roomKtxVersion = "2.6.1"
 comGoogleDevtoolsKspGradlePlugin = "2.1.0-1.0.29"
+datastoreCoreAndroid = "1.1.2"
 
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
@@ -52,6 +55,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "converte
 room-ktx = { module = "com.androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtxVersion" }
 com-google-devtools-ksp-gradle-plugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "comGoogleDevtoolsKspGradlePlugin" }
+androidx-datastore-core-android = { group = "androidx.datastore", name = "datastore-core-android", version.ref = "datastoreCoreAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
