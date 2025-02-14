@@ -49,9 +49,6 @@ fun NewTodoDialog(
     var priority by remember { mutableStateOf("中") } // 默认优先级为“中”
     val context = LocalContext.current
 
-    // 获取当前用户 ID
-    val userId = if (authViewModel.isLoggedIn) authViewModel.userId else 0
-
     // 日期选择器
     val datePickerDialog = DatePickerDialog(
         context,
