@@ -1,10 +1,10 @@
-package com.xfei33.quicktodo.data.di
+package com.xfei33.quicktodo.di
 
 import android.content.Context
-import com.xfei33.quicktodo.data.UserPreferences
-import com.xfei33.quicktodo.data.db.AppDatabase
-import com.xfei33.quicktodo.network.ApiService
-import com.xfei33.quicktodo.network.RetrofitClient
+import com.xfei33.quicktodo.data.local.db.AppDatabase
+import com.xfei33.quicktodo.data.preferences.UserPreferences
+import com.xfei33.quicktodo.data.remote.api.ApiService
+import com.xfei33.quicktodo.data.remote.client.RetrofitClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

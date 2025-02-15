@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.data.converter
+package com.xfei33.quicktodo.data.local.converter
 
 import androidx.room.TypeConverter
 import java.time.LocalDateTime

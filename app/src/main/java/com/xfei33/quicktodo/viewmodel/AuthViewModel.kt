@@ -2,9 +2,9 @@ package com.xfei33.quicktodo.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xfei33.quicktodo.data.UserPreferences
-import com.xfei33.quicktodo.network.ApiService
-import com.xfei33.quicktodo.network.AuthRequest
+import com.xfei33.quicktodo.data.preferences.UserPreferences
+import com.xfei33.quicktodo.data.remote.api.ApiService
+import com.xfei33.quicktodo.data.remote.api.AuthRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

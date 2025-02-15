@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.data.dao
+package com.xfei33.quicktodo.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -12,9 +12,6 @@ import java.time.LocalDateTime
 @Dao
 interface TodoDao {
 
-    @Query("SELECT MAX(lastModified) FROM todos WHERE userId = :userId")
-    fun getLastSyncTime(userId: Long): LocalDateTime?
-
     @Query("SELECT * FROM todos WHERE userId = :userId ORDER BY dueDate ASC")
     fun getTodosByUser(userId: Long): Flow<List<Todo>>
 
@@ -22,7 +19,7 @@ interface TodoDao {
     fun getNotDeletedTodosByUser(userId: Long): Flow<List<Todo>>
 
     @Query("SELECT * FROM todos WHERE userId = :userId AND lastModified > :lastSyncTime")
-    fun getIncrementalData(userId: Long, lastSyncTime: LocalDateTime): List<Todo>
+    fun getDirtyTodosByUser(userId: Long, lastSyncTime: LocalDateTime): List<Todo>
 
     @Insert
     suspend fun insert(todo: Todo)

@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.network
+package com.xfei33.quicktodo.data.remote.adapter
 
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer

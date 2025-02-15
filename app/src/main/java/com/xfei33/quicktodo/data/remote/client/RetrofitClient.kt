@@ -1,8 +1,10 @@
-package com.xfei33.quicktodo.network
+package com.xfei33.quicktodo.data.remote.client
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.xfei33.quicktodo.BuildConfig.BASE_URL
+import com.xfei33.quicktodo.data.remote.adapter.LocalDateTimeAdapter
+import com.xfei33.quicktodo.data.remote.api.ApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit

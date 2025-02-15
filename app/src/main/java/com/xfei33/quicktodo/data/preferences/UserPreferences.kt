@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.data
+package com.xfei33.quicktodo.data.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.time.LocalDateTime
 
 // 创建 DataStore 实例
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -60,9 +59,9 @@ class UserPreferences(private val context: Context) {
     }
 
     // 获取 lastSyncTime
-    val lastSyncTime: Flow<LocalDateTime?>
+    val lastSyncTime: Flow<String?>
         get() = context.dataStore.data.map { preferences ->
-            LocalDateTime.parse( preferences[LAST_SYNC_TIME_KEY]?: DEFAULT_LAST_SYNC_TIME)
+            preferences[LAST_SYNC_TIME_KEY]?: DEFAULT_LAST_SYNC_TIME
         }
 
     // 清除用户数据（用于注销）

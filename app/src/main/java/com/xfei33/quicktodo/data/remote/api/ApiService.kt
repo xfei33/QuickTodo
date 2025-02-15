@@ -1,7 +1,7 @@
-package com.xfei33.quicktodo.network
+package com.xfei33.quicktodo.data.remote.api
 
 import androidx.room.TypeConverters
-import com.xfei33.quicktodo.data.converter.LocalDateTimeConverter
+import com.xfei33.quicktodo.data.local.converter.LocalDateTimeConverter
 import com.xfei33.quicktodo.model.Todo
 import retrofit2.Response
 import retrofit2.http.Body
