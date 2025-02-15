@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.xfei33.quicktodo.model.Todo
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Dao
 interface TodoDao {
@@ -19,7 +20,10 @@ interface TodoDao {
     fun getNotDeletedTodosByUser(userId: Long): Flow<List<Todo>>
 
     @Query("SELECT * FROM todos WHERE userId = :userId AND lastModified > :lastSyncTime")
-    fun getDirtyTodosByUser(userId: Long, lastSyncTime: LocalDateTime): List<Todo>
+    fun getIncrementalData(userId: Long, lastSyncTime: LocalDateTime): List<Todo>
+
+    @Query("SELECT * FROM todos WHERE id = :id")
+    suspend fun getTodoById(id: UUID): Todo?
 
     @Insert
     suspend fun insert(todo: Todo)
