@@ -141,9 +141,9 @@ fun NewTodoDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    PriorityButton("低", priority == "低") { priority = "低" }
-                    PriorityButton("中", priority == "中") { priority = "中" }
-                    PriorityButton("高", priority == "高") { priority = "高" }
+                    PriorityButton("低", priority == "低") { priority = "LOW" }
+                    PriorityButton("中", priority == "中") { priority = "MEDIUM" }
+                    PriorityButton("高", priority == "高") { priority = "HIGH" }
                 }
 
                 // 确定和取消按钮
