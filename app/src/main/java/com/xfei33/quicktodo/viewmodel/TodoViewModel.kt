@@ -31,8 +31,6 @@ class TodoViewModel @Inject constructor(
     private val _token = MutableStateFlow<String?>("")
     val token: StateFlow<String?> get() = _token
 
-    private var lastSyncTime: LocalDateTime = LocalDateTime.parse("0001-01-01T00:00:00")
-
     init {
         viewModelScope.launch() {
             _userId.value = userPreferences.userId.first()!!
@@ -53,40 +51,43 @@ class TodoViewModel @Inject constructor(
     // 增量同步
     private fun syncData() {
         viewModelScope.launch(Dispatchers.IO) {
-            // 从服务端获取增量数据
-            val incrementalData = apiService.getIncrementalData(token.value!!, userId.value, lastSyncTime)
-            incrementalData.body()?.forEach { todo ->
-                if (todo.deleted) {
-                    todoDao.delete(todo) // 删除标记为已删除的待办事项
-                } else {
+            val localLatestTime = todoDao.getLastSyncTime(userId.value) ?: LocalDateTime.parse("0001-01-01T00:00:00")
+            val serverLatestTime = apiService.getLatestTime(token.value!!, userId.value).body() ?: LocalDateTime.parse("0001-01-01T00:00:00")
+
+            // 服务器数据比本地新
+            if (localLatestTime < serverLatestTime) {
+                val incrementalData = apiService.getIncrementalData(token.value!!, userId.value, localLatestTime)
+                incrementalData.body()?.forEach { todo ->
                     todoDao.insert(todo) // 添加或更新待办事项
                 }
+            } else if (localLatestTime > serverLatestTime) {
+                // 本地数据比服务器新，需要上传本地数据
+                val localIncrementalData = todoDao.getIncrementalData(userId.value, serverLatestTime)
+                apiService.uploadIncrementalData(token.value!!, userId.value, localIncrementalData)
+            } else {
+                // 本地数据和服务器数据相同，不需要同步
             }
-
-            // 上传客户端的增量数据
-            val localIncrementalData = todoDao.getIncrementalData(userId.value, lastSyncTime)
-            apiService.uploadIncrementalData(token.value!!, userId.value, localIncrementalData)
-
-            // 更新最后同步时间
-            lastSyncTime = LocalDateTime.now()
         }
     }
 
 
     fun addTodo(todo: Todo) {
         viewModelScope.launch {
+            todo.lastModified = LocalDateTime.now()
             todoDao.insert(todo)
         }
     }
 
     fun updateTodo(todo: Todo) {
         viewModelScope.launch {
+            todo.lastModified = LocalDateTime.now()
             todoDao.update(todo)
         }
     }
 
     fun deleteTodo(todo: Todo) {
         viewModelScope.launch {
+            todo.lastModified = LocalDateTime.now()
             todo.deleted = true
         }
     }

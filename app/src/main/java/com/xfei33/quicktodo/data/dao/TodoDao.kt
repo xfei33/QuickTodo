@@ -11,6 +11,10 @@ import java.time.LocalDateTime
 
 @Dao
 interface TodoDao {
+
+    @Query("SELECT MAX(lastModified) FROM todos WHERE userId = :userId")
+    fun getLastSyncTime(userId: Long): LocalDateTime?
+
     @Query("SELECT * FROM todos WHERE userId = :userId ORDER BY dueDate ASC")
     fun getTodosByUser(userId: Long): Flow<List<Todo>>
 

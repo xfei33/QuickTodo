@@ -11,7 +11,7 @@ import com.xfei33.quicktodo.model.Todo
 
 @Database(
     entities = [Todo::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(LocalDateTimeConverter::class) // 注册 TypeConverter

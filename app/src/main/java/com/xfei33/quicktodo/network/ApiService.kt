@@ -35,4 +35,10 @@ interface ApiService {
         @Query("userId") userId: Long,
         @Body incrementalData: List<Todo>
     ): Response<Void>
+
+    @GET("utils/latestTime")
+    suspend fun getLatestTime(
+        @Header("Authorization") token: String,
+        @Query("userId") userId: Long
+    ): Response<LocalDateTime>
 }
