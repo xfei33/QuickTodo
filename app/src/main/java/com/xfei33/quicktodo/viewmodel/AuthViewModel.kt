@@ -7,11 +7,13 @@ import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.api.AuthRequest
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 import org.json.JSONObject
 import javax.inject.Inject
 
@@ -33,12 +35,22 @@ class AuthViewModel @Inject constructor(
     private val _token = MutableStateFlow<String?>(null)
     val token: StateFlow<String?> get() = _token
 
+    // 同步状态
+    private val _syncStatus = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
+    val syncStatus: StateFlow<SyncStatus> get() = _syncStatus
+
+    sealed class SyncStatus {
+        object Idle : SyncStatus()
+        object Syncing : SyncStatus()
+        object Success : SyncStatus()
+        data class Failed(val message: String?) : SyncStatus()
+    }
+
     init {
         viewModelScope.launch {
-            // 使用firstOrNull防止当Flow中没有数据时抛出异常
-            val savedToken = userPreferences.token
+            val savedToken = userPreferences.token.firstOrNull()
             val savedUserId = userPreferences.userId.firstOrNull()
-            _token.value = savedToken.first()
+            _token.value = savedToken
             _userId.value = savedUserId
             _isLoggedIn.value = savedUserId != null && savedUserId > 0
         }
@@ -52,11 +64,7 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     onResult(true, "注册成功")
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    val errorMessage = errorBody?.let {
-                        val jsonObject = JSONObject(it)
-                        jsonObject.getString("error")
-                    } ?: "注册失败"
+                    val errorMessage = parseErrorMessage(response.errorBody())
                     onResult(false, errorMessage)
                 }
             } catch (e: Exception) {
@@ -71,31 +79,47 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
-                    val token = "Bearer " + response.body()?.token.orEmpty()
+                    val token = "Bearer ${response.body()?.token.orEmpty()}"
                     val userId = response.body()?.userId ?: 0
                     userPreferences.saveToken(token)
                     userPreferences.saveUserId(userId)
+                    userPreferences.saveIsFirstLaunch(false)
                     _token.value = token
                     _userId.value = userId
                     _isLoggedIn.value = true
-                    println("#################################################")
+
                     // 同步数据
-                    todoRepository.syncWithServer()
-                    onResult(true, "登录成功")
+                    _syncStatus.value = SyncStatus.Syncing
+                    var syncResult: Result<Unit>
+                    withContext(Dispatchers.IO) {
+                        syncResult = todoRepository.syncWithServer()
+                    }
+                        if (syncResult.isSuccess) {
+                            _syncStatus.value = SyncStatus.Success
+                            onResult(true, "登录成功")
+                        } else {
+                            val errorMessage = syncResult.exceptionOrNull()?.message ?: "同步失败"
+                            _syncStatus.value = SyncStatus.Failed(errorMessage)
+                            onResult(false, errorMessage)
+                        }
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    val errorMessage = errorBody?.let {
-                        val jsonObject = JSONObject(it)
-                        jsonObject.getString("error")
-                    } ?: "登录失败"
-                    println("登录失败: $errorMessage")
+                    val errorMessage = parseErrorMessage(response.errorBody())
+                    _syncStatus.value = SyncStatus.Failed(errorMessage)
                     onResult(false, errorMessage)
                 }
             } catch (e: Exception) {
                 val errorMessage = "网络错误：${e.message}"
-                println("登录错误: $errorMessage")
+                _syncStatus.value = SyncStatus.Failed(errorMessage)
                 onResult(false, errorMessage)
             }
+        }
+    }
+
+    // 离线使用
+    fun offlineLogin() {
+        viewModelScope.launch {
+            userPreferences.saveIsFirstLaunch(false)
+            userPreferences.saveUserId(0L)
         }
     }
 
@@ -107,5 +131,17 @@ class AuthViewModel @Inject constructor(
             _userId.value = null
             _token.value = null
         }
+    }
+
+    // 解析错误消息
+    private fun parseErrorMessage(errorBody: ResponseBody?): String {
+        return errorBody?.string()?.let {
+            try {
+                val jsonObject = JSONObject(it)
+                jsonObject.getString("error")
+            } catch (e: Exception) {
+                "未知错误"
+            }
+        } ?: "请求失败"
     }
 }

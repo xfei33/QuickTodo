@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -14,6 +16,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,47 +37,74 @@ fun AuthScreen(navController: NavController, authViewModel: AuthViewModel = hilt
     var password by remember { mutableStateOf("") }
     var isLogin by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val syncStatus by authViewModel.syncStatus.collectAsState()
 
-    AuthContent(
-        username = username,
-        onUsernameChange = { username = it },
-        password = password,
-        onPasswordChange = { password = it },
-        isLogin = isLogin,
-        onToggleAuthMode = { isLogin = !isLogin },
-        errorMessage = errorMessage,
-        onLogin = {
-            authViewModel.login(username, password) { success, message ->
-                if (success) {
-                    navController.navigate("main") {
-                        popUpTo("auth") { inclusive = true }
-                    }
-                } else {
-                    errorMessage = message
-                }
-            }
-        },
-        onRegister = {
-            authViewModel.register(username, password) { success, message ->
-                if (success) {
-                    authViewModel.login(username, password) { loginSuccess, loginMessage ->
-                        if (loginSuccess) {
+    when (syncStatus) {
+        is AuthViewModel.SyncStatus.Syncing -> {
+            // 显示加载指示器
+            CircularProgressIndicator(
+                modifier = Modifier.size(50.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 4.dp
+            )
+        }
+
+        is AuthViewModel.SyncStatus.Success -> {
+            // 跳转到主界面
+            navController.navigate("main")
+        }
+
+        is AuthViewModel.SyncStatus.Failed -> {
+            // 显示错误提示
+            Text(text = "同步失败：${(syncStatus as AuthViewModel.SyncStatus.Failed).message}")
+        }
+
+        else -> {
+            // 显示登录/注册界面
+            AuthContent(
+                username = username,
+                onUsernameChange = { username = it },
+                password = password,
+                onPasswordChange = { password = it },
+                isLogin = isLogin,
+                onToggleAuthMode = { isLogin = !isLogin },
+                errorMessage = errorMessage,
+                onLogin = {
+                    authViewModel.login(username, password) { success, message ->
+                        if (success) {
                             navController.navigate("main") {
                                 popUpTo("auth") { inclusive = true }
                             }
                         } else {
-                            errorMessage = loginMessage
+                            errorMessage = message
                         }
                     }
-                } else {
-                    errorMessage = message
+                },
+                onRegister = {
+                    authViewModel.register(username, password) { success, message ->
+                        if (success) {
+                            authViewModel.login(username, password) { loginSuccess, loginMessage ->
+                                if (loginSuccess) {
+                                    navController.navigate("main") {
+                                        popUpTo("auth") { inclusive = true }
+                                    }
+                                } else {
+                                    errorMessage = loginMessage
+                                }
+                            }
+                        } else {
+                            errorMessage = message
+                        }
+                    }
+                },
+                onOfflineUse = {
+                    authViewModel.offlineLogin()
+                    // 跳转到主界面
+                    navController.navigate("main")
                 }
-            }
-        },
-        onOfflineUse = {
-            navController.navigate("main")
+            )
         }
-    )
+    }
 }
 
 @Composable

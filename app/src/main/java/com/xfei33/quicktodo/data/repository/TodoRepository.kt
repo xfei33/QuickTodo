@@ -17,40 +17,50 @@ class TodoRepository @Inject constructor(
 ) {
 
     // Sync with server
-    suspend fun syncWithServer() {
-        val lastSyncTime = getLastSyncTime()
-        val userId = userPreferences.userId.first()!!
-        val token = userPreferences.token.first()!!
+    suspend fun syncWithServer(): Result<Unit> {
+        return try {
+            val lastSyncTime = getLastSyncTime()
+            val userId = userPreferences.userId.first()!!
+            val token = userPreferences.token.first()!!
 
-
-        // 上传本地未同步数据
-        val localIncrementalData = getIncrementalData(userId, lastSyncTime)
-        if (localIncrementalData.isNotEmpty()) {
-            val response = apiService.uploadIncrementalData(token, userId, localIncrementalData)
-            if (response.isSuccessful) {
-                localIncrementalData.forEach { todo ->
-                    updateTodo(todo)
+            // 上传本地未同步数据
+            val localIncrementalData = getIncrementalData(userId, lastSyncTime)
+            if (localIncrementalData.isNotEmpty()) {
+                val response = apiService.uploadIncrementalData(token, userId, localIncrementalData)
+                if (response.isSuccessful) {
+                    localIncrementalData.forEach { todo ->
+                        updateTodo(todo)
+                    }
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "上传数据失败"
+                    return Result.failure(Exception(errorMessage))
                 }
             }
-        }
 
-        // 拉取服务器最新数据
-        val serverIncrementalData = apiService.getIncrementalData(token, userId, lastSyncTime)
-        if (serverIncrementalData.isSuccessful) {
-            serverIncrementalData.body()?.forEach { serverTodo ->
-                val localTodo = getTodoById(serverTodo.id)
-                if (localTodo == null) {
-                    // 新增
-                    insertTodo(serverTodo)
-                } else {
-                    if (serverTodo.lastModified.isAfter(localTodo.lastModified)) {
-                        // 更新
-                        updateTodo(serverTodo)
+            // 拉取服务器最新数据
+            val serverIncrementalData = apiService.getIncrementalData(token, userId, lastSyncTime)
+            if (serverIncrementalData.isSuccessful) {
+                serverIncrementalData.body()?.let { todos ->
+                    todos.forEach { serverTodo ->
+                        val localTodo = getTodoById(serverTodo.id)
+                        if (localTodo == null) {
+                            insertTodo(serverTodo)
+                        } else if (serverTodo.lastModified.isAfter(localTodo.lastModified)) {
+                            updateTodo(serverTodo)
+                        }
                     }
                 }
+            } else {
+                val errorMessage = serverIncrementalData.errorBody()?.string() ?: "拉取数据失败"
+                return Result.failure(Exception(errorMessage))
             }
+
+            // 更新最后同步时间
+            updateLastSyncTime(LocalDateTime.now())
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        updateLastSyncTime(LocalDateTime.now())
     }
 
     private suspend fun getLastSyncTime(): LocalDateTime {
@@ -62,7 +72,13 @@ class TodoRepository @Inject constructor(
         userPreferences.saveLastSyncTime(time.toString())
     }
 
-    suspend fun createTodo(title: String, description: String?, dueDate: LocalDateTime, priority: String?, tag: String): Todo {
+    suspend fun createTodo(
+        title: String,
+        description: String?,
+        dueDate: LocalDateTime,
+        priority: String?,
+        tag: String
+    ): Todo {
         val userId = userPreferences.userId.first()!!
         val todo = Todo(
             id = UUID.randomUUID(),
@@ -90,6 +106,7 @@ class TodoRepository @Inject constructor(
     }
 
     suspend fun deleteTodo(todo: Todo) {
+        todo.lastModified = LocalDateTime.now()
         todoDao.delete(todo)
     }
 

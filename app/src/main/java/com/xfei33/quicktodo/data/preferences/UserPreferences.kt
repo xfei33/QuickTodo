@@ -3,6 +3,7 @@ package com.xfei33.quicktodo.data.preferences
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -19,10 +20,12 @@ class UserPreferences(private val context: Context) {
         private val TOKEN_KEY = stringPreferencesKey("token")
         private val USER_ID_KEY = longPreferencesKey("user_id")
         private val LAST_SYNC_TIME_KEY = stringPreferencesKey("lastSyncTime")
+        private val IS_FIRST_LAUNCH_KEY = booleanPreferencesKey("isFirstLaunch")
 
         private const val DEFAULT_TOKEN = "" // 离线用户默认token
         private const val DEFAULT_USER_ID = 0L // 离线用户默认id
         private const val DEFAULT_LAST_SYNC_TIME = "0001-01-01T00:00:00" // 离线用户默认lastSyncTime
+        private const val DEFAULT_IS_FIRST_LAUNCH = true // 默认第一次使用
     }
 
     // 保存 Token
@@ -64,12 +67,26 @@ class UserPreferences(private val context: Context) {
             preferences[LAST_SYNC_TIME_KEY]?: DEFAULT_LAST_SYNC_TIME
         }
 
+    // 保存 isFirstLaunch
+    suspend fun saveIsFirstLaunch(isFirstLaunch: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_FIRST_LAUNCH_KEY] = isFirstLaunch
+        }
+    }
+
+    // 获取 isFirstLaunch
+    val isFirstLaunch: Flow<Boolean>
+        get() = context.dataStore.data.map { preferences ->
+            preferences[IS_FIRST_LAUNCH_KEY] ?: DEFAULT_IS_FIRST_LAUNCH
+            }
+
     // 清除用户数据（用于注销）
     suspend fun clear() {
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
             preferences.remove(USER_ID_KEY)
             preferences.remove(LAST_SYNC_TIME_KEY)
+            preferences.remove(IS_FIRST_LAUNCH_KEY)
         }
     }
 
