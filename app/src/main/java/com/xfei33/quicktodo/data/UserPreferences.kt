@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDateTime
 
 // 创建 DataStore 实例
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -18,9 +19,11 @@ class UserPreferences(private val context: Context) {
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("token")
         private val USER_ID_KEY = longPreferencesKey("user_id")
+        private val LAST_SYNC_TIME_KEY = stringPreferencesKey("lastSyncTime")
 
         private const val DEFAULT_TOKEN = "" // 离线用户默认token
         private const val DEFAULT_USER_ID = 0L // 离线用户默认id
+        private const val DEFAULT_LAST_SYNC_TIME = "0001-01-01T00:00:00" // 离线用户默认lastSyncTime
     }
 
     // 保存 Token
@@ -49,11 +52,26 @@ class UserPreferences(private val context: Context) {
             preferences[USER_ID_KEY] ?: DEFAULT_USER_ID
         }
 
+    // 保存 lastSyncTime
+    suspend fun saveLastSyncTime(lastSyncTime: String) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_SYNC_TIME_KEY] = lastSyncTime
+        }
+    }
+
+    // 获取 lastSyncTime
+    val lastSyncTime: Flow<LocalDateTime?>
+        get() = context.dataStore.data.map { preferences ->
+            LocalDateTime.parse( preferences[LAST_SYNC_TIME_KEY]?: DEFAULT_LAST_SYNC_TIME)
+        }
+
     // 清除用户数据（用于注销）
     suspend fun clear() {
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
             preferences.remove(USER_ID_KEY)
+            preferences.remove(LAST_SYNC_TIME_KEY)
         }
     }
+
 }
