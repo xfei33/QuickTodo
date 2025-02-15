@@ -2,10 +2,10 @@ package com.xfei33.quicktodo.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xfei33.quicktodo.data.UserPreferences
-import com.xfei33.quicktodo.data.dao.TodoDao
+import com.xfei33.quicktodo.data.local.dao.TodoDao
+import com.xfei33.quicktodo.data.preferences.UserPreferences
+import com.xfei33.quicktodo.data.repository.TodoRepository
 import com.xfei33.quicktodo.model.Todo
-import com.xfei33.quicktodo.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 class TodoViewModel @Inject constructor(
     private val todoDao: TodoDao,
     private val userPreferences: UserPreferences,
-    private val apiService: ApiService
+    private val todoRepository: TodoRepository,
 ) : ViewModel() {
 
     private val _todos = MutableStateFlow<List<Todo>>(emptyList())
@@ -28,14 +28,9 @@ class TodoViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long>(0L)
     val userId: StateFlow<Long> get() = _userId
 
-    private val _token = MutableStateFlow<String?>("")
-    val token: StateFlow<String?> get() = _token
-
     init {
         viewModelScope.launch() {
             _userId.value = userPreferences.userId.first()!!
-            _token.value = userPreferences.token.first()
-            syncData()
             loadTodos()
         }
     }
@@ -48,47 +43,27 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    // 增量同步
-    private fun syncData() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val localLatestTime = todoDao.getLastSyncTime(userId.value) ?: LocalDateTime.parse("0001-01-01T00:00:00")
-            val serverLatestTime = apiService.getLatestTime(token.value!!, userId.value).body() ?: LocalDateTime.parse("0001-01-01T00:00:00")
-
-            // 服务器数据比本地新
-            if (localLatestTime < serverLatestTime) {
-                val incrementalData = apiService.getIncrementalData(token.value!!, userId.value, localLatestTime)
-                incrementalData.body()?.forEach { todo ->
-                    todoDao.insert(todo) // 添加或更新待办事项
-                }
-            } else if (localLatestTime > serverLatestTime) {
-                // 本地数据比服务器新，需要上传本地数据
-                val localIncrementalData = todoDao.getIncrementalData(userId.value, serverLatestTime)
-                apiService.uploadIncrementalData(token.value!!, userId.value, localIncrementalData)
-            } else {
-                // 本地数据和服务器数据相同，不需要同步
-            }
-        }
-    }
-
-
-    fun addTodo(todo: Todo) {
+    fun addTodo(title: String, description: String?, dueDate: LocalDateTime, priority: String?, tag: String) {
         viewModelScope.launch {
-            todo.lastModified = LocalDateTime.now()
-            todoDao.insert(todo)
+            todoRepository.createTodo(
+                title = title,
+                description = description,
+                dueDate = dueDate,
+                priority = priority,
+                tag = tag
+            )
         }
     }
 
     fun updateTodo(todo: Todo) {
         viewModelScope.launch {
-            todo.lastModified = LocalDateTime.now()
-            todoDao.update(todo)
+            todoRepository.updateTodo(todo)
         }
     }
 
     fun deleteTodo(todo: Todo) {
         viewModelScope.launch {
-            todo.lastModified = LocalDateTime.now()
-            todo.deleted = true
+            todoRepository.deleteTodo(todo)
         }
     }
 }
