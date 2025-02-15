@@ -1,10 +1,12 @@
 package com.xfei33.quicktodo.di
 
 import android.content.Context
+import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.db.AppDatabase
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.client.RetrofitClient
+import com.xfei33.quicktodo.data.repository.TodoRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,5 +36,15 @@ object AppModule {
     @Singleton
     fun provideUserPreferences(@ApplicationContext context: Context): UserPreferences {
         return UserPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTodoRepository(
+        apiService: ApiService,
+        userPreferences: UserPreferences,
+        todoDao: TodoDao
+    ): TodoRepository {
+        return TodoRepository(todoDao, apiService, userPreferences)
     }
 }
