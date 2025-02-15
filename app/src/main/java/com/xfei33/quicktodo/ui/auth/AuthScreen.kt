@@ -100,7 +100,9 @@ fun AuthScreen(navController: NavController, authViewModel: AuthViewModel = hilt
                 onOfflineUse = {
                     authViewModel.offlineLogin()
                     // 跳转到主界面
-                    navController.navigate("main")
+                    navController.navigate("main") {
+                        popUpTo("auth") { inclusive = true }
+                    }
                 }
             )
         }

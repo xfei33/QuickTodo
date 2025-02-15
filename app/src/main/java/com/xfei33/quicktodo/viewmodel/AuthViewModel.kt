@@ -20,13 +20,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val userPreferences: UserPreferences,
+    val userPreferences: UserPreferences,
     private val todoRepository: TodoRepository
 ) : ViewModel() {
-    // 登录状态
-    private val _isLoggedIn = MutableStateFlow<Boolean>(false)
-    val isLoggedIn: StateFlow<Boolean> get() = _isLoggedIn
-
     // 用户id
     private val _userId = MutableStateFlow<Long?>(null)
     val userId: StateFlow<Long?> get() = _userId
@@ -52,7 +48,6 @@ class AuthViewModel @Inject constructor(
             val savedUserId = userPreferences.userId.firstOrNull()
             _token.value = savedToken
             _userId.value = savedUserId
-            _isLoggedIn.value = savedUserId != null && savedUserId > 0
         }
     }
 
@@ -86,7 +81,6 @@ class AuthViewModel @Inject constructor(
                     userPreferences.saveIsFirstLaunch(false)
                     _token.value = token
                     _userId.value = userId
-                    _isLoggedIn.value = true
 
                     // 同步数据
                     _syncStatus.value = SyncStatus.Syncing
@@ -127,7 +121,6 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             userPreferences.clear()
-            _isLoggedIn.value = false
             _userId.value = null
             _token.value = null
         }
