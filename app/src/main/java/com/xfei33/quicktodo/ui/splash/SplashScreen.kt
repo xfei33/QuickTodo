@@ -24,11 +24,11 @@ fun SplashScreen(navController: NavController, authViewModel: AuthViewModel = hi
     LaunchedEffect(isFirstLaunch) {
         delay(1000)
         if (isFirstLaunch) {
-            navController.navigate("main") {
+            navController.navigate("auth") {
                 popUpTo("splash") { inclusive = true }
             }
         } else {
-            navController.navigate("auth") {
+            navController.navigate("main") {
                 popUpTo("splash") { inclusive = true }
             }
         }
