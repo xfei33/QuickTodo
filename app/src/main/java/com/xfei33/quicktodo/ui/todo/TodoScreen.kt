@@ -19,22 +19,43 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xfei33.quicktodo.components.AppTopBar
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.viewmodel.TodoViewModel
+import java.time.LocalDateTime
+import java.util.UUID
 
 @Composable
-fun TodoScreen() {
-    val viewModel: TodoViewModel = hiltViewModel()
+fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
     val todos by viewModel.todos.collectAsState(initial = emptyList())
-    var showDialog by remember { mutableStateOf(false) } // 控制对话框的显示和隐藏
+    var showDialog by remember { mutableStateOf(false) }
 
+    TodoContent(
+        todos = todos,
+        onAddTodo = { title, description, tag, dueDate, priority ->
+            viewModel.addTodo(title, description, dueDate, priority, tag)
+        },
+        onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
+        showDialog = showDialog,
+        onShowDialogChange = { showDialog = it }
+    )
+}
+
+@Composable
+fun TodoContent(
+    todos: List<Todo>,
+    onAddTodo: (String, String?, String, LocalDateTime, String) -> Unit,
+    onDeleteTodo: (Todo) -> Unit,
+    showDialog: Boolean,
+    onShowDialogChange: (Boolean) -> Unit
+) {
     Scaffold(
         topBar = { AppTopBar(onSearchClick = { /* TODO: Search */ }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) {
+            FloatingActionButton(onClick = { onShowDialogChange(true) }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Todo")
             }
         }
@@ -50,7 +71,7 @@ fun TodoScreen() {
                     TodoCard(
                         todo = todo,
                         onEditClick = { /* TODO: Edit todo */ },
-                        onDeleteClick = { viewModel.deleteTodo(it) }
+                        onDeleteClick = { onDeleteTodo(it) }
                     )
                 }
             }
@@ -59,20 +80,64 @@ fun TodoScreen() {
 
     if (showDialog) {
         NewTodoDialog(
-            onDismiss = { showDialog = false },
+            onDismiss = { onShowDialogChange(false) },
             onConfirm = { title, description, tag, dueDate, priority ->
-                val newTodo = Todo(
-                    title = title,
-                    description = description,
-                    dueDate = dueDate,
-                    userId = viewModel.userId.value, // 使用 ViewModel 中的用户 ID
-                    priority = priority,
-                    completed = false,
-                    tag = tag
-                )
-                viewModel.addTodo(newTodo)
-                showDialog = false
+                onAddTodo(title, description, tag, dueDate, priority)
+                onShowDialogChange(false)
             }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewTodoContent() {
+    MaterialTheme {
+        TodoContent(
+            todos = listOf(
+                Todo(
+                    id = UUID.randomUUID(),
+                    title = "完成项目报告",
+                    description = "撰写项目总结",
+                    dueDate = LocalDateTime.now(),
+                    userId = 1,
+                    priority = "High",
+                    completed = false,
+                    tag = "Work",
+                    lastModified = LocalDateTime.now(),
+                    deleted = false
+                ),
+                Todo(
+                    id = UUID.randomUUID(),
+                    title = "购买食材",
+                    description = "牛奶、面包、鸡蛋",
+                    dueDate = LocalDateTime.now(),
+                    userId = 1,
+                    priority = "Medium",
+                    completed = false,
+                    tag = "Shopping",
+                    lastModified = LocalDateTime.now(),
+                    deleted = false
+                )
+            ),
+            onAddTodo = { _, _, _, _, _ -> },
+            onDeleteTodo = {},
+            showDialog = false,
+            onShowDialogChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewTodoContentWithDialog() {
+    MaterialTheme {
+        TodoContent(
+            todos = emptyList(),
+            onAddTodo = { _, _, _, _, _ -> },
+            onDeleteTodo = {},
+            showDialog = true,
+            onShowDialogChange = {}
         )
     }
 }

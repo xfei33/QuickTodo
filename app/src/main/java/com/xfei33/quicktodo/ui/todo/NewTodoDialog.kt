@@ -29,9 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.xfei33.quicktodo.R
-import com.xfei33.quicktodo.viewmodel.AuthViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -41,7 +39,6 @@ fun NewTodoDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, String?, String, LocalDateTime, String) -> Unit,
 ) {
-    val authViewModel: AuthViewModel = hiltViewModel()
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var tag by remember { mutableStateOf("") }
@@ -84,7 +81,7 @@ fun NewTodoDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "新建待办事项",
+                    text = "新建",
                     style = MaterialTheme.typography.titleLarge
                 )
 
