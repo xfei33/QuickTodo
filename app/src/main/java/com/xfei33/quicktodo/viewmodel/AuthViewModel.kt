@@ -72,19 +72,16 @@ class AuthViewModel @Inject constructor(
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
                     val token = "Bearer " + response.body()?.token.orEmpty()
-                    val userId = response.body()?.userId
-                    if (userId != null) {
-                        userPreferences.saveToken(token)
-                        userPreferences.saveUserId(userId)
-                        _token.value = token
-                        _userId.value = userId
-                        _isLoggedIn.value = true
-                        // 同步数据
-                        todoRepository.syncWithServer()
-                        onResult(true, "登录成功")
-                    } else {
-                        onResult(false, "登录失败：用户名密码错误")
-                    }
+                    val userId = response.body()?.userId ?: 0
+                    userPreferences.saveToken(token)
+                    userPreferences.saveUserId(userId)
+                    _token.value = token
+                    _userId.value = userId
+                    _isLoggedIn.value = true
+                    println("#################################################")
+                    // 同步数据
+                    todoRepository.syncWithServer()
+                    onResult(true, "登录成功")
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = errorBody?.let {
