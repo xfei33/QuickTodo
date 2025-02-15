@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.api.AuthRequest
+import com.xfei33.quicktodo.data.repository.TodoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import javax.inject.Inject
@@ -16,32 +18,33 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val todoRepository: TodoRepository
 ) : ViewModel() {
-//    private val apiService: ApiService = RetrofitClient.apiService
-
     // 登录状态
     private val _isLoggedIn = MutableStateFlow<Boolean>(false)
     val isLoggedIn: StateFlow<Boolean> get() = _isLoggedIn
 
     // 用户id
-    private val _userId = MutableStateFlow<Long>(0L)
-    val userId: StateFlow<Long> get() = _userId
+    private val _userId = MutableStateFlow<Long?>(null)
+    val userId: StateFlow<Long?> get() = _userId
 
     // token
-    private val _token = MutableStateFlow<String>("")
+    private val _token = MutableStateFlow<String?>(null)
     val token: StateFlow<String?> get() = _token
 
     init {
         viewModelScope.launch {
-            _token.value = userPreferences.token.toString()
-            _userId.value = userPreferences.userId.first()!!
-            if(_userId.value > 0) {
-                _isLoggedIn.value = true
-            }
+            // 使用firstOrNull防止当Flow中没有数据时抛出异常
+            val savedToken = userPreferences.token
+            val savedUserId = userPreferences.userId.firstOrNull()
+            _token.value = savedToken.first()
+            _userId.value = savedUserId
+            _isLoggedIn.value = savedUserId != null && savedUserId > 0
         }
     }
 
+    // 注册
     fun register(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
@@ -50,12 +53,10 @@ class AuthViewModel @Inject constructor(
                     onResult(true, "注册成功")
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    val errorMessage = if (errorBody != null) {
-                        val jsonObject = JSONObject(errorBody)
+                    val errorMessage = errorBody?.let {
+                        val jsonObject = JSONObject(it)
                         jsonObject.getString("error")
-                    } else {
-                        "注册失败"
-                    }
+                    } ?: "注册失败"
                     onResult(false, errorMessage)
                 }
             } catch (e: Exception) {
@@ -64,38 +65,50 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun login(username: String, password: String, onResult: (Boolean?) -> Unit) {
+    // 登录
+    fun login(username: String, password: String, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = apiService.login(AuthRequest(username, password))
                 if (response.isSuccessful) {
-                    val token = "Bearer " + response.body()?.token
+                    val token = "Bearer " + response.body()?.token.orEmpty()
                     val userId = response.body()?.userId
-                    userPreferences.saveToken(token)
-                    userPreferences.saveUserId(userId!!)
-                    _token.value = token
-                    _userId.value = userId
-                    _isLoggedIn.value = true
-                    onResult(true)
+                    if (userId != null) {
+                        userPreferences.saveToken(token)
+                        userPreferences.saveUserId(userId)
+                        _token.value = token
+                        _userId.value = userId
+                        _isLoggedIn.value = true
+                        // 同步数据
+                        todoRepository.syncWithServer()
+                        onResult(true, "登录成功")
+                    } else {
+                        onResult(false, "登录失败：用户名密码错误")
+                    }
                 } else {
-                    println("Login failed: ${response.errorBody()?.string()}")
-                    onResult(false)
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = errorBody?.let {
+                        val jsonObject = JSONObject(it)
+                        jsonObject.getString("error")
+                    } ?: "登录失败"
+                    println("登录失败: $errorMessage")
+                    onResult(false, errorMessage)
                 }
             } catch (e: Exception) {
-                println("Login error: ${e.message}")
-                onResult(false)
+                val errorMessage = "网络错误：${e.message}"
+                println("登录错误: $errorMessage")
+                onResult(false, errorMessage)
             }
         }
     }
 
+    // 登出
     fun logout() {
         viewModelScope.launch {
             userPreferences.clear()
             _isLoggedIn.value = false
-            _userId.value = 0L
-            _token.value = ""
+            _userId.value = null
+            _token.value = null
         }
     }
 }
-
-
