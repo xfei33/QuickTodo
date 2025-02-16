@@ -70,8 +70,8 @@ fun TodoContent(
                 items(todos) { todo ->
                     TodoCard(
                         todo = todo,
-                        onCheckedChange = { /* TODO: Handle checked change */ },
-                        modifier = Modifier.padding(8.dp),
+                        onCheckedChange = { },
+                        modifier = Modifier.padding(8.dp)
                     )
                 }
             }
@@ -113,8 +113,8 @@ fun PreviewTodoContent() {
                     description = "牛奶、面包、鸡蛋",
                     dueDate = LocalDateTime.now(),
                     userId = 1,
-                    priority = "MEDIUM",
-                    completed = false,
+                    priority = "LOW",
+                    completed = true,
                     tag = "Shopping",
                     lastModified = LocalDateTime.now(),
                     deleted = false
