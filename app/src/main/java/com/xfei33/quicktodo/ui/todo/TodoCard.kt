@@ -130,8 +130,6 @@ fun PriorityIndicator(priority: String) {
     }
 }
 
-
-
 @Preview
 @Composable
 fun PreviewTodoCard() {
@@ -143,9 +141,10 @@ fun PreviewTodoCard() {
             dueDate = LocalDateTime.now().plusDays(1),
             userId = 1,
             priority = "MEDIUM",
-            completed = false,
+            completed = true,
             tag = "生活"
         )
         TodoCard(todo = todo, onCheckedChange = { /* Handle checked change */ })
     }
 }
+
