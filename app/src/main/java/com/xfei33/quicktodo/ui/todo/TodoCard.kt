@@ -1,6 +1,10 @@
 package com.xfei33.quicktodo.ui.todo
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,38 +12,200 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.ui.theme.QuickTodoTheme
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
+enum class SwipeDirection {
+    None, Left, Right
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableTodoCard(
+    todo: Todo,
+    onEdit: (Todo) -> Unit,
+    onComplete: (Todo) -> Unit,
+    modifier: Modifier = Modifier,
+    onDelete: (Todo) -> Unit
+) {
+    val swipeThreshold = with(LocalDensity.current) { 150.dp.toPx() } // 滑动阈值
+    val coroutineScope = rememberCoroutineScope()
+    var swipeOffset by remember { mutableFloatStateOf(0f) }
+    var swipeDirection by remember { mutableStateOf(SwipeDirection.None) }
+    var isSwiping by remember { mutableStateOf(false) } // 是否正在滑动
+    var showDeleteDialog by remember { mutableStateOf(false) } // 是否显示删除对话框
+
+    // 限制滑动最大偏移量
+    val maxSwipeOffset = 100f // 设置最大滑动值
+    // 限制滑动偏移量范围
+    val constrainedSwipeOffset = swipeOffset.coerceIn(-maxSwipeOffset, maxSwipeOffset)
+
+    // 使用动画平滑地回到原始位置
+    val animatedOffset by animateFloatAsState(
+        targetValue = if (isSwiping) constrainedSwipeOffset else 0f,
+        animationSpec = tween(durationMillis = 400),
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        isSwiping = true // 开始滑动
+                    },
+                    onDragEnd = {
+                        when {
+                            swipeDirection == SwipeDirection.Right -> {
+                                coroutineScope.launch {
+                                    onComplete(todo) // 右划标记为已完成
+                                }
+                            }
+                            swipeDirection == SwipeDirection.Left -> {
+                                coroutineScope.launch {
+                                    onEdit(todo) // 左划进入编辑界面
+                                }
+                            }
+                        }
+                        isSwiping = false // 结束滑动
+                        swipeOffset = 0f // 重置偏移量
+                        swipeDirection = SwipeDirection.None // 重置滑动方向
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        swipeOffset += dragAmount
+                        when {
+                            swipeOffset > swipeThreshold -> {
+                                swipeDirection = SwipeDirection.Right
+                            }
+                            swipeOffset < -swipeThreshold -> {
+                                swipeDirection = SwipeDirection.Left
+                            }
+                        }
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onLongPress = {
+                    showDeleteDialog = true // 长按显示删除对话框
+                })
+            }
+    ) {
+        // 背景指示器
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(top = 8.dp, bottom = 8.dp)
+                .background(
+                    when (swipeDirection) {
+                        SwipeDirection.Right -> MaterialTheme.colorScheme.primaryContainer
+                        SwipeDirection.Left -> MaterialTheme.colorScheme.secondaryContainer
+                        SwipeDirection.None -> Color.Transparent
+                    }
+                )
+                .padding(16.dp),
+            contentAlignment = when (swipeDirection) {
+                SwipeDirection.Right -> Alignment.CenterStart
+                SwipeDirection.Left -> Alignment.CenterEnd
+                SwipeDirection.None -> Alignment.Center
+            }
+        ) {
+            Text(
+                text = when (swipeDirection) {
+                    SwipeDirection.Right -> if (todo.completed) "取消完成" else "已完成"
+                    SwipeDirection.Left -> "编辑"
+                    SwipeDirection.None -> ""
+                },
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        // TodoCard
+        TodoCard(
+            todo = todo,
+            modifier = Modifier
+                .offset(x = animatedOffset.dp)
+                .fillMaxWidth()
+        )
+    }
+
+    // 删除确认对话框
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false // 关闭对话框
+            },
+            title = {
+                Text(text = "删除任务")
+            },
+            text = {
+                Text(text = "确定要删除任务“${todo.title}”吗？")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(todo) // 确认删除
+                        showDeleteDialog = false // 关闭对话框
+                    }
+                ) {
+                    Text(text = "删除")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false // 关闭对话框
+                    }
+                ) {
+                    Text(text = "取消")
+                }
+            }
+        )
+    }
+}
+
 @Composable
 fun TodoCard(
     todo: Todo,
-    onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = if (todo.completed) {
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -106,6 +272,7 @@ fun TodoCard(
 }
 
 
+// 优先级指示器
 @Composable
 fun PriorityIndicator(priority: String) {
     val (text, color) = when (priority) {
@@ -130,9 +297,11 @@ fun PriorityIndicator(priority: String) {
     }
 }
 
+
+
 @Preview
 @Composable
-fun PreviewTodoCard() {
+fun PreviewSwipeableTodoCard() {
     QuickTodoTheme {
         val todo = Todo(
             id = UUID.randomUUID(),
@@ -144,7 +313,11 @@ fun PreviewTodoCard() {
             completed = true,
             tag = "生活"
         )
-        TodoCard(todo = todo, onCheckedChange = { /* Handle checked change */ })
+        SwipeableTodoCard(
+            todo = todo,
+            onComplete = { /* Handle complete */ },
+            onEdit = { /* Handle edit */ },
+            onDelete = { /* Handle delete */ }
+        )
     }
 }
-

@@ -43,6 +43,12 @@ class TodoViewModel @Inject constructor(
         }
     }
 
+    // 切换todo的完成状态
+    fun updateTodoCompletionStatus(todo: Todo) {
+        todo.completed =!todo.completed
+        updateTodo(todo)
+    }
+
     fun addTodo(title: String, description: String?, dueDate: LocalDateTime, priority: String?, tag: String) {
         viewModelScope.launch {
             todoRepository.createTodo(

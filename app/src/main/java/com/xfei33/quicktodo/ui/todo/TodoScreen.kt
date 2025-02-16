@@ -40,7 +40,8 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
         },
         onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
         showDialog = showDialog,
-        onShowDialogChange = { showDialog = it }
+        onShowDialogChange = { showDialog = it },
+        onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) }
     )
 }
 
@@ -50,7 +51,8 @@ fun TodoContent(
     onAddTodo: (String, String?, String, LocalDateTime, String) -> Unit,
     onDeleteTodo: (Todo) -> Unit,
     showDialog: Boolean,
-    onShowDialogChange: (Boolean) -> Unit
+    onShowDialogChange: (Boolean) -> Unit,
+    onCompletedChange: (Todo) -> Unit
 ) {
     Scaffold(
         topBar = { AppTopBar(onSearchClick = { /* TODO: Search */ }) },
@@ -68,10 +70,11 @@ fun TodoContent(
             )
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(todos) { todo ->
-                    TodoCard(
+                    SwipeableTodoCard(
                         todo = todo,
-                        onCheckedChange = { },
-                        modifier = Modifier.padding(8.dp)
+                        onEdit = { },
+                        onComplete = { onCompletedChange(todo) },
+                        onDelete = { onDeleteTodo(todo) },
                     )
                 }
             }
@@ -123,7 +126,8 @@ fun PreviewTodoContent() {
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             showDialog = false,
-            onShowDialogChange = {}
+            onShowDialogChange = {},
+            onCompletedChange = {}
         )
     }
 }
@@ -137,7 +141,8 @@ fun PreviewTodoContentWithDialog() {
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             showDialog = true,
-            onShowDialogChange = {}
+            onShowDialogChange = {},
+            onCompletedChange = {}
         )
     }
 }
