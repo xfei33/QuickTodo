@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.com.google.devtools.ksp.gradle.plugin)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.material)
+    implementation(libs.androidx.graphics.shapes.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">QuickTodo</string>
+    <string name="placeholder_search">查找待办</string>
 </resources>
