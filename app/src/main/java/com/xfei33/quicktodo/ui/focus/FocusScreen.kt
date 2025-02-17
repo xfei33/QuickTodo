@@ -85,12 +85,23 @@ fun FocusScreen(
     val scope = rememberCoroutineScope()
     var timerService by remember { mutableStateOf<TimerService?>(null) }
 
-    // 绑定服务
+    // 修改服务绑定逻辑
     DisposableEffect(Unit) {
         val serviceIntent = Intent(context, TimerService::class.java)
+        // 启动服务以确保其在后台运行
+        context.startService(serviceIntent)
+
         val serviceConnection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                timerService = (service as TimerService.TimerBinder).getService()
+                val binder = service as TimerService.TimerBinder
+                timerService = binder.getService()
+                // 连接后立即同步状态
+                scope.launch {
+                    timerService?.let { service ->
+                        viewModel.updateTimerState(service.timerState.value)
+                        viewModel.updateRemainingSeconds(service.remainingSeconds.value)
+                    }
+                }
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
@@ -101,6 +112,7 @@ fun FocusScreen(
         context.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
 
         onDispose {
+            // 解绑服务但不停止它
             context.unbindService(serviceConnection)
         }
     }
