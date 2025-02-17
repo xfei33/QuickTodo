@@ -31,7 +31,7 @@ import java.util.UUID
 @Composable
 fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
     val todos by viewModel.todos.collectAsState(initial = emptyList())
-    var showDialog by remember { mutableStateOf(false) }
+
 
     TodoContent(
         todos = todos,
@@ -39,8 +39,6 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
             viewModel.addTodo(title, description, dueDate, priority, tag)
         },
         onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
-        showDialog = showDialog,
-        onShowDialogChange = { showDialog = it },
         onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) },
         onEditTodo = { todo -> viewModel.updateTodo(todo) }
     )
@@ -51,15 +49,16 @@ fun TodoContent(
     todos: List<Todo>,
     onAddTodo: (String, String?, String, LocalDateTime, String) -> Unit,
     onDeleteTodo: (Todo) -> Unit,
-    showDialog: Boolean,
-    onShowDialogChange: (Boolean) -> Unit,
     onCompletedChange: (Todo) -> Unit,
     onEditTodo: (Todo) -> Unit
 ) {
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var showSearchDialog by remember { mutableStateOf(false) }
+
     Scaffold(
-        topBar = { AppTopBar(onSearchClick = { /* TODO: Search */ }) },
+        topBar = { AppTopBar(onSearchClick = { showSearchDialog = !showSearchDialog }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onShowDialogChange(true) }) {
+            FloatingActionButton(onClick = { showCreateDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Todo")
             }
         }
@@ -83,14 +82,18 @@ fun TodoContent(
         }
     }
 
-    if (showDialog) {
+    if (showCreateDialog) {
         NewTodoDialog(
-            onDismiss = { onShowDialogChange(false) },
+            onDismiss = { showCreateDialog = false },
             onConfirm = { title, description, tag, dueDate, priority ->
                 onAddTodo(title, description, tag, dueDate, priority)
-                onShowDialogChange(false)
+                showCreateDialog = false
             }
         )
+    }
+
+    if (showSearchDialog) {
+
     }
 }
 
@@ -127,8 +130,6 @@ fun PreviewTodoContent() {
             ),
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
-            showDialog = false,
-            onShowDialogChange = {},
             onCompletedChange = {},
             onEditTodo = {}
         )
@@ -143,8 +144,6 @@ fun PreviewTodoContentWithDialog() {
             todos = emptyList(),
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
-            showDialog = true,
-            onShowDialogChange = {},
             onCompletedChange = {},
             onEditTodo = {}
         )

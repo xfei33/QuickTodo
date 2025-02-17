@@ -32,13 +32,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.xfei33.quicktodo.R
 import com.xfei33.quicktodo.model.Todo
 import java.time.Instant
 import java.time.LocalDateTime
@@ -132,15 +130,15 @@ fun EditTodoDialog(
                     }
 
                     // 时间选择按钮
-                    OutlinedButton(
-                        onClick = {
-                            isTimePickerDialogVisible = true
-                        }
-                    ) {
-                        Icon(painterResource(R.drawable.baseline_access_time_24), contentDescription = "选择时间")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("选择时间")
-                    }
+//                    OutlinedButton(
+//                        onClick = {
+//                            isTimePickerDialogVisible = true
+//                        }
+//                    ) {
+//                        Icon(painterResource(R.drawable.baseline_access_time_24), contentDescription = "选择时间")
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text("选择时间")
+//                    }
                 }
 
                 // 优先级选择
@@ -234,6 +232,7 @@ fun EditTodoDialog(
                                     .toLocalDate()
                                 dueDate = LocalDateTime.of(selectedDate, dueDate.toLocalTime())
                                 isDatePickerDialogVisible = false
+                                isTimePickerDialogVisible = true
                             }) {
                                 Text("确定")
                             }

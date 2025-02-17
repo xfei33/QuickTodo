@@ -35,13 +35,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.xfei33.quicktodo.R
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -56,9 +54,9 @@ fun NewTodoDialog(
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var tag by remember { mutableStateOf("") }
+    var tag by remember { mutableStateOf("默认") }
     var dueDate by remember { mutableStateOf(LocalDateTime.now()) }
-    var priority by remember { mutableStateOf("中") } // 默认优先级为“中”
+    var priority by remember { mutableStateOf("MEDIUM") } // 默认优先级为“中”
 
     var isTimePickerDialogVisible by remember { mutableStateOf(false) }
     var isDatePickerDialogVisible by remember { mutableStateOf(false) }
@@ -127,21 +125,21 @@ fun NewTodoDialog(
                             isDatePickerDialogVisible = true
                         }
                     ) {
-                        Icon(Icons.Default.DateRange, contentDescription = "选择日期")
+                        Icon(Icons.Default.DateRange, contentDescription = "截止时间")
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("选择日期")
+                        Text("截止时间")
                     }
 
-                    // 时间选择按钮
-                    OutlinedButton(
-                        onClick = {
-                            isTimePickerDialogVisible = true
-                        }
-                    ) {
-                        Icon(painterResource(R.drawable.baseline_access_time_24), contentDescription = "选择时间")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("选择时间")
-                    }
+//                    // 时间选择按钮
+//                    OutlinedButton(
+//                        onClick = {
+//                            isTimePickerDialogVisible = true
+//                        }
+//                    ) {
+//                        Icon(painterResource(R.drawable.baseline_access_time_24), contentDescription = "选择时间")
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text("选择时间")
+//                    }
                 }
 
                 // 优先级选择
@@ -152,9 +150,10 @@ fun NewTodoDialog(
 
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier.fillMaxWidth(),
+                    space = 8.dp,
                 ) {
                     val options = listOf("低", "中", "高")
-                    options.forEach { option ->
+                    options.forEachIndexed() { index,option ->
                         val selected = when (priority) {
                             "LOW" -> option == "低"
                             "MEDIUM" -> option == "中"
@@ -174,9 +173,9 @@ fun NewTodoDialog(
                             modifier = Modifier
                                 .width(0.dp)
                                 .weight(1f)
-                                .padding(horizontal = 4.dp) // 添加按钮之间的间距
+                                //.padding(horizontal = 4.dp) // 添加按钮之间的间距
                                 .animateContentSize(), // 添加动画效果
-                            shape = MaterialTheme.shapes.small, // 设置按钮形状
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size), // 设置按钮形状
                             colors = SegmentedButtonDefaults.colors(
                                 activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -235,6 +234,7 @@ fun NewTodoDialog(
                                     .toLocalDate()
                                 dueDate = LocalDateTime.of(selectedDate, dueDate.toLocalTime())
                                 isDatePickerDialogVisible = false
+                                isTimePickerDialogVisible = true
                             }) {
                                 Text("确定")
                             }
