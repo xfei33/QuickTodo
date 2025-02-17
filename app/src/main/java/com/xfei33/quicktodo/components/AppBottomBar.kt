@@ -12,6 +12,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xfei33.quicktodo.R
+import com.xfei33.quicktodo.navigation.NavRoutes
 
 @Composable
 fun AppBottomBar(navController: NavController) {
@@ -19,32 +20,56 @@ fun AppBottomBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar {
-        NavigationBarItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_todo), contentDescription = "待办") },
-            label = { Text("待办") },
-            selected = currentRoute == "todo",
-            onClick = { navController.navigate("todo") }
-        )
-        NavigationBarItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_focus), contentDescription = "专注") },
-            label = { Text("专注") },
-            selected = currentRoute == "focus",
-            onClick = { navController.navigate("focus") }
-        )
-        NavigationBarItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_message), contentDescription = "消息") },
-            label = { Text("消息") },
-            selected = currentRoute == "message",
-            onClick = { navController.navigate("message") }
-        )
-        NavigationBarItem(
-            icon = { Icon(painterResource(id = R.drawable.ic_profile), contentDescription = "我的") },
-            label = { Text("我的") },
-            selected = currentRoute == "profile",
-            onClick = { navController.navigate("profile") }
-        )
+        listOf(
+            NavigationItem(
+                route = NavRoutes.Main.TODO,
+                icon = R.drawable.ic_todo,
+                label = "待办"
+            ),
+            NavigationItem(
+                route = NavRoutes.Main.FOCUS,
+                icon = R.drawable.ic_focus,
+                label = "专注"
+            ),
+            NavigationItem(
+                route = NavRoutes.Main.MESSAGE,
+                icon = R.drawable.ic_message,
+                label = "消息"
+            ),
+            NavigationItem(
+                route = NavRoutes.Main.PROFILE,
+                icon = R.drawable.ic_profile,
+                label = "我的"
+            )
+        ).forEach { item ->
+            NavigationBarItem(
+                icon = { Icon(painterResource(id = item.icon), contentDescription = item.label) },
+                label = { Text(item.label) },
+                selected = currentRoute == item.route,
+                onClick = {
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            // 避免创建重复页面
+                            launchSingleTop = true
+                            // 恢复到之前的状态
+                            restoreState = true
+                            // 弹出到起始页面，保留起始页面
+                            popUpTo(NavRoutes.Main.TODO) {
+                                saveState = true
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
 }
+
+private data class NavigationItem(
+    val route: String,
+    val icon: Int,
+    val label: String
+)
 
 @Preview
 @Composable
