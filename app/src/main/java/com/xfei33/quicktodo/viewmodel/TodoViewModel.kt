@@ -28,6 +28,8 @@ class TodoViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long>(0L)
     val userId: StateFlow<Long> get() = _userId
 
+    private var originalTodos = emptyList<Todo>()
+
     init {
         viewModelScope.launch() {
             _userId.value = userPreferences.userId.first()!!
@@ -38,8 +40,22 @@ class TodoViewModel @Inject constructor(
     private fun loadTodos() {
         viewModelScope.launch(Dispatchers.IO) {
             todoDao.getNotDeletedTodosByUser(userId.value).collect { todos ->
+                originalTodos = todos
                 _todos.value = todos
             }
+        }
+    }
+
+    fun searchTodos(query: String) {
+        if (query.isBlank()) {
+            _todos.value = originalTodos
+            return
+        }
+
+        _todos.value = originalTodos.filter { todo ->
+            todo.title.contains(query, ignoreCase = true) ||
+                    (todo.description?.contains(query, ignoreCase = true) ?: false) ||
+                    todo.tag.contains(query, ignoreCase = true)
         }
     }
 

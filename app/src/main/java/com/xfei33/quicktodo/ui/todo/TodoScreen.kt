@@ -32,7 +32,6 @@ import java.util.UUID
 fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
     val todos by viewModel.todos.collectAsState(initial = emptyList())
 
-
     TodoContent(
         todos = todos,
         onAddTodo = { title, description, tag, dueDate, priority ->
@@ -40,7 +39,8 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
         },
         onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
         onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) },
-        onEditTodo = { todo -> viewModel.updateTodo(todo) }
+        onEditTodo = { todo -> viewModel.updateTodo(todo) },
+        onSearch = { query -> viewModel.searchTodos(query) }
     )
 }
 
@@ -50,13 +50,17 @@ fun TodoContent(
     onAddTodo: (String, String?, String, LocalDateTime, String) -> Unit,
     onDeleteTodo: (Todo) -> Unit,
     onCompletedChange: (Todo) -> Unit,
-    onEditTodo: (Todo) -> Unit
+    onEditTodo: (Todo) -> Unit,
+    onSearch: (String) -> Unit
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
-    var showSearchDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { AppTopBar(onSearchClick = { showSearchDialog = !showSearchDialog }) },
+        topBar = {
+            AppTopBar(
+                onSearchTextChange = { query -> onSearch(query) }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreateDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Todo")
@@ -90,10 +94,6 @@ fun TodoContent(
                 showCreateDialog = false
             }
         )
-    }
-
-    if (showSearchDialog) {
-
     }
 }
 
@@ -131,7 +131,8 @@ fun PreviewTodoContent() {
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             onCompletedChange = {},
-            onEditTodo = {}
+            onEditTodo = {},
+            onSearch = {}
         )
     }
 }
@@ -145,7 +146,8 @@ fun PreviewTodoContentWithDialog() {
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             onCompletedChange = {},
-            onEditTodo = {}
+            onEditTodo = {},
+            onSearch = {}
         )
     }
 }
