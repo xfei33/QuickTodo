@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">QuickTodo</string>
-    <string name="placeholder_search">查找待办</string>
+    <string name="placeholder_search">根据标题/详情/标签查找待办</string>
 </resources>
