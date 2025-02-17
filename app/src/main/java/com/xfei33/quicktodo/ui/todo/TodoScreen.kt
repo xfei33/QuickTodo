@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.xfei33.quicktodo.components.AppTopBar
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.viewmodel.TodoViewModel
 import java.time.LocalDateTime
@@ -68,10 +67,12 @@ fun TodoContent(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
+
             Text(
-                text = "今日",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(16.dp)
+                text = "花开堪折直须折，莫待无花空折枝。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier.padding(start = 20.dp, bottom = 16.dp)
             )
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(todos) { todo ->
