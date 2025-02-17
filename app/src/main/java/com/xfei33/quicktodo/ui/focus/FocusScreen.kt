@@ -1,5 +1,10 @@
 package com.xfei33.quicktodo.ui.focus
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -25,6 +30,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,14 +44,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.xfei33.quicktodo.service.TimerService
+import com.xfei33.quicktodo.viewmodel.FocusViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -60,20 +71,61 @@ fun FocusScreenPreview() {
 }
 
 @Composable
-fun FocusScreen(navController: NavController) {
-    var timerState by remember { mutableStateOf(TimerState.IDLE) }
-    var remainingSeconds by remember { mutableStateOf(0L) }
-    var selectedMinutes by remember { mutableStateOf(25f) }
-    var isCountDown by remember { mutableStateOf(true) }
+fun FocusScreen(
+    navController: NavController,
+    viewModel: FocusViewModel = hiltViewModel()
+) {
+    val timerState by viewModel.timerState.collectAsState()
+    val remainingSeconds by viewModel.remainingSeconds.collectAsState()
+    val selectedMinutes by viewModel.selectedMinutes.collectAsState()
+    val isCountDown by viewModel.isCountDown.collectAsState()
+    val pausedSeconds by viewModel.pausedSeconds.collectAsState()
 
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<Job?>(null) }
+    var timerService by remember { mutableStateOf<TimerService?>(null) }
+
+    // 绑定服务
+    DisposableEffect(Unit) {
+        val serviceIntent = Intent(context, TimerService::class.java)
+        val serviceConnection = object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+                timerService = (service as TimerService.TimerBinder).getService()
+            }
+
+            override fun onServiceDisconnected(name: ComponentName?) {
+                timerService = null
+            }
+        }
+
+        context.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+
+        onDispose {
+            context.unbindService(serviceConnection)
+        }
+    }
+
+    // 监听服务状态
+    LaunchedEffect(timerService) {
+        timerService?.let { service ->
+            scope.launch {
+                service.remainingSeconds.collect { seconds ->
+                    viewModel.updateRemainingSeconds(seconds)
+                }
+            }
+            scope.launch {
+                service.timerState.collect { state ->
+                    viewModel.updateTimerState(state)
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             FocusScreenTopBar(
                 isCountDown = isCountDown,
-                onModeChange = { isCountDown = it }
+                onModeChange = { viewModel.updateIsCountDown(it) }
             )
         }
     ) { paddingValues ->
@@ -97,7 +149,7 @@ fun FocusScreen(navController: NavController) {
                         .height(280.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val progress = if (isCountDown && timerState == TimerState.RUNNING) {
+                    val progress = if (isCountDown && timerState != TimerState.IDLE) {
                         remainingSeconds.toFloat() / (selectedMinutes * 60)
                     } else 1f
 
@@ -112,12 +164,11 @@ fun FocusScreen(navController: NavController) {
                                     onDoubleTap = {
                                         when (timerState) {
                                             TimerState.RUNNING -> {
-                                                job?.cancel()
-                                                timerState = TimerState.PAUSED
+                                                viewModel.updatePausedSeconds(remainingSeconds)
+                                                timerService?.pauseTimer()
                                             }
                                             TimerState.PAUSED -> {
-                                                timerState = TimerState.RUNNING
-                                                startTimer(scope, isCountDown)
+                                                timerService?.resumeTimer(pausedSeconds, isCountDown)
                                             }
                                             else -> {}
                                         }
@@ -196,7 +247,7 @@ fun FocusScreen(navController: NavController) {
                         ) {
                             Slider(
                                 value = selectedMinutes,
-                                onValueChange = { selectedMinutes = it },
+                                onValueChange = { viewModel.updateSelectedMinutes(it) },
                                 valueRange = 5f..180f,
                                 steps = 174,  // (180-5)
                                 modifier = Modifier.fillMaxWidth(),
@@ -244,31 +295,11 @@ fun FocusScreen(navController: NavController) {
                     onClick = {
                         when (timerState) {
                             TimerState.IDLE -> {
-                                timerState = TimerState.RUNNING
-                                remainingSeconds = if (isCountDown) (selectedMinutes.toInt() * 60L) else 0L
-                                job = scope.launch {
-                                    while (true) {
-                                        delay(1000)
-                                        if (isCountDown) {
-                                            remainingSeconds--
-                                            if (remainingSeconds <= 0) {
-                                                timerState = TimerState.IDLE
-                                                break
-                                            }
-                                        } else {
-                                            remainingSeconds++
-                                        }
-                                    }
-                                }
+                                val totalSeconds = selectedMinutes.toInt() * 60L
+                                timerService?.startTimer(totalSeconds, isCountDown)
                             }
-                            TimerState.RUNNING -> {
-                                job?.cancel()
-                                timerState = TimerState.IDLE
-                                remainingSeconds = 0
-                            }
-                            TimerState.PAUSED -> {
-                                timerState = TimerState.IDLE
-                                remainingSeconds = 0
+                            TimerState.RUNNING, TimerState.PAUSED -> {
+                                timerService?.stopTimer()
                             }
                         }
                     },
@@ -284,8 +315,8 @@ fun FocusScreen(navController: NavController) {
                     Text(
                         text = when (timerState) {
                             TimerState.IDLE -> if (isCountDown) "开始专注" else "开始计时"
-                            TimerState.RUNNING -> "停止"
-                            TimerState.PAUSED -> "停止"
+                            TimerState.RUNNING -> "结束"
+                            TimerState.PAUSED -> "结束"
                         },
                         style = MaterialTheme.typography.bodyLarge
                     )
