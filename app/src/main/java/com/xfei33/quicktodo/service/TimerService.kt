@@ -1,5 +1,6 @@
 package com.xfei33.quicktodo.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -35,6 +36,8 @@ class TimerService : Service() {
     private val _timerState = MutableStateFlow(TimerState.IDLE)
     val timerState: StateFlow<TimerState> = _timerState
 
+    private var notificationManager: NotificationManager? = null
+
     inner class TimerBinder : Binder() {
         fun getService(): TimerService = this@TimerService
     }
@@ -46,12 +49,15 @@ class TimerService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        notificationManager = getSystemService(NotificationManager::class.java)
     }
 
     fun startTimer(totalSeconds: Long, isCountDown: Boolean) {
         _timerState.value = TimerState.RUNNING
         _isRunning.value = true
         _remainingSeconds.value = if (isCountDown) totalSeconds else 0L
+
+        notificationManager?.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -65,7 +71,7 @@ class TimerService : Service() {
                 if (isCountDown) {
                     _remainingSeconds.value = _remainingSeconds.value - 1
                     if (_remainingSeconds.value <= 0) {
-                        stopTimer()
+                        stopTimer(true)
                         break
                     }
                 } else {
@@ -86,13 +92,19 @@ class TimerService : Service() {
         startTimer(seconds, isCountDown)
     }
 
-    fun stopTimer() {
+    fun stopTimer(isNaturalEnd: Boolean = false) {
         timerJob?.cancel()
         _timerState.value = TimerState.IDLE
         _isRunning.value = false
         _remainingSeconds.value = 0
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+
+        notificationManager?.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+
+        if (isNaturalEnd) {
+            sendCompletionNotification()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -105,8 +117,23 @@ class TimerService : Service() {
                 description = "显示计时器运行状态"
             }
 
+            val completionChannel = NotificationChannel(
+                COMPLETION_CHANNEL_ID,
+                "计时完成通知",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "计时完成提醒"
+                setSound(
+                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
+                    Notification.AUDIO_ATTRIBUTES_DEFAULT
+                )
+                enableVibration(true)
+                vibrationPattern = longArrayOf(500, 500, 500)
+            }
+
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(completionChannel)
         }
     }
 
@@ -137,8 +164,25 @@ class TimerService : Service() {
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
+    private fun sendCompletionNotification() {
+        val notification = NotificationCompat.Builder(this, COMPLETION_CHANNEL_ID)
+            .setContentTitle("计时完成")
+            .setContentText("专注时间已结束！")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSound(android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION))
+            .setVibrate(longArrayOf(500, 500, 500))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(createPendingIntent())
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(COMPLETION_NOTIFICATION_ID, notification)
+    }
+
     companion object {
         private const val CHANNEL_ID = "timer_service_channel"
+        private const val COMPLETION_CHANNEL_ID = "timer_completion_channel"
         private const val NOTIFICATION_ID = 1
+        private const val COMPLETION_NOTIFICATION_ID = 2
     }
 } 

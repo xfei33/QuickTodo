@@ -2,6 +2,9 @@ package com.xfei33.quicktodo
 
 import android.Manifest
 import android.app.AlertDialog
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -46,6 +49,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotificationPermission()
         }
+        requestDndPermission(this)
 
         enableEdgeToEdge()
         setContent {
@@ -91,6 +95,42 @@ class MainActivity : ComponentActivity() {
                     }
                 }.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+    }
+}
+
+// 在类顶部添加共享首选项的key
+private const val PREFS_NAME = "AppPrefs"
+private const val FIRST_RUN_KEY = "first_run"
+
+private fun requestDndPermission(context: Context) {
+    val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    when {
+        notificationManager.isNotificationPolicyAccessGranted -> {
+            // 已经有权限
+            prefs.edit().putBoolean(FIRST_RUN_KEY, false).apply()
+        }
+        prefs.getBoolean(FIRST_RUN_KEY, true) -> {
+            // 首次运行显示定制对话框
+            AlertDialog.Builder(context)
+                .setTitle("需要勿扰模式权限")
+                .setMessage("为了在专注期间屏蔽通知，需要您授予勿扰模式设置权限。\n\n请点击「去设置」后开启「允许修改勿扰模式」权限")
+                .setPositiveButton("去设置") { _, _ ->
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                    prefs.edit().putBoolean(FIRST_RUN_KEY, false).apply()
+                }
+                .setNegativeButton("取消") { _, _ ->
+                    prefs.edit().putBoolean(FIRST_RUN_KEY, false).apply()
+                    Toast.makeText(context, "未获得权限，计时功能可能受限", Toast.LENGTH_LONG).show()
+                }
+                .setCancelable(false)
+                .show()
+        }
+        else -> {
+            // 非首次运行直接跳转设置
+            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
         }
     }
 }
