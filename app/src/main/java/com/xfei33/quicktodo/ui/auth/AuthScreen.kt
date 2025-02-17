@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -42,11 +40,11 @@ fun AuthScreen(navController: NavController, authViewModel: AuthViewModel = hilt
     when (syncStatus) {
         is AuthViewModel.SyncStatus.Syncing -> {
             // 显示加载指示器
-            CircularProgressIndicator(
-                modifier = Modifier.size(50.dp),
-                color = MaterialTheme.colorScheme.primary,
-                strokeWidth = 4.dp
-            )
+//            CircularProgressIndicator(
+//                modifier = Modifier.size(10.dp),
+//                color = MaterialTheme.colorScheme.primary,
+//                strokeWidth = 4.dp
+//            )
         }
 
         is AuthViewModel.SyncStatus.Success -> {
@@ -125,7 +123,7 @@ fun AuthContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp), // Increased padding for better spacing
+            .padding(36.dp), // Increased padding for better spacing
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
