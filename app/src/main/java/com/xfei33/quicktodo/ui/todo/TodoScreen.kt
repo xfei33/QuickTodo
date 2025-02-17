@@ -41,7 +41,8 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
         onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
         showDialog = showDialog,
         onShowDialogChange = { showDialog = it },
-        onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) }
+        onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) },
+        onEditTodo = { todo -> viewModel.updateTodo(todo) }
     )
 }
 
@@ -52,7 +53,8 @@ fun TodoContent(
     onDeleteTodo: (Todo) -> Unit,
     showDialog: Boolean,
     onShowDialogChange: (Boolean) -> Unit,
-    onCompletedChange: (Todo) -> Unit
+    onCompletedChange: (Todo) -> Unit,
+    onEditTodo: (Todo) -> Unit
 ) {
     Scaffold(
         topBar = { AppTopBar(onSearchClick = { /* TODO: Search */ }) },
@@ -72,7 +74,7 @@ fun TodoContent(
                 items(todos) { todo ->
                     SwipeableTodoCard(
                         todo = todo,
-                        onEdit = { },
+                        onEdit = { onEditTodo(todo) },
                         onComplete = { onCompletedChange(todo) },
                         onDelete = { onDeleteTodo(todo) },
                     )
@@ -127,7 +129,8 @@ fun PreviewTodoContent() {
             onDeleteTodo = {},
             showDialog = false,
             onShowDialogChange = {},
-            onCompletedChange = {}
+            onCompletedChange = {},
+            onEditTodo = {}
         )
     }
 }
@@ -142,7 +145,8 @@ fun PreviewTodoContentWithDialog() {
             onDeleteTodo = {},
             showDialog = true,
             onShowDialogChange = {},
-            onCompletedChange = {}
+            onCompletedChange = {},
+            onEditTodo = {}
         )
     }
 }

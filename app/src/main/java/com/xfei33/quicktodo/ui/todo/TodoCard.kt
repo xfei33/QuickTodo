@@ -2,6 +2,7 @@ package com.xfei33.quicktodo.ui.todo
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -34,7 +35,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.ui.theme.QuickTodoTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -67,6 +71,19 @@ fun SwipeableTodoCard(
     var swipeDirection by remember { mutableStateOf(SwipeDirection.None) }
     var isSwiping by remember { mutableStateOf(false) } // 是否正在滑动
     var showDeleteDialog by remember { mutableStateOf(false) } // 是否显示删除对话框
+    var showEditDialog by remember { mutableStateOf(false) } // 是否显示编辑对话框
+
+    // 长按动画相关状态
+    var longPressPosition by remember { mutableStateOf<Offset?>(null) }
+    var circleRadius by remember { mutableStateOf(0f) }
+    val animatedRadius by animateFloatAsState(
+        targetValue = circleRadius,
+        animationSpec = tween(durationMillis = 300)
+    )
+    // 计算最大半径（足以覆盖整个 Card）
+    val maxRadius = with(LocalDensity.current) {
+        (1200.dp.toPx()) // 根据 Card 的大小调整
+    }
 
     // 限制滑动最大偏移量
     val maxSwipeOffset = 100f // 设置最大滑动值
@@ -94,9 +111,10 @@ fun SwipeableTodoCard(
                                     onComplete(todo) // 右划标记为已完成
                                 }
                             }
+
                             swipeDirection == SwipeDirection.Left -> {
                                 coroutineScope.launch {
-                                    onEdit(todo) // 左划进入编辑界面
+                                    showEditDialog = true // 左划进入编辑界面
                                 }
                             }
                         }
@@ -110,6 +128,7 @@ fun SwipeableTodoCard(
                             swipeOffset > swipeThreshold -> {
                                 swipeDirection = SwipeDirection.Right
                             }
+
                             swipeOffset < -swipeThreshold -> {
                                 swipeDirection = SwipeDirection.Left
                             }
@@ -118,9 +137,22 @@ fun SwipeableTodoCard(
                 )
             }
             .pointerInput(Unit) {
-                detectTapGestures(onLongPress = {
-                    showDeleteDialog = true // 长按显示删除对话框
-                })
+                detectTapGestures(
+                    onLongPress = { offset ->
+                        longPressPosition = offset // 记录长按位置
+                        circleRadius = 10f // 重置圆形半径
+                        coroutineScope.launch {
+                            // 启动圆形扩散动画
+                            while (circleRadius < maxRadius) {
+                                circleRadius += 30f
+                                delay(10)
+                            }
+                            showDeleteDialog = true // 动画完成后显示删除对话框
+                            longPressPosition = null // 长按结束，清空记录
+                            circleRadius = 0f // 重置圆形半径
+                        }
+                    }
+                )
             }
     ) {
         // 背景指示器
@@ -154,12 +186,32 @@ fun SwipeableTodoCard(
         }
 
         // TodoCard
-        TodoCard(
-            todo = todo,
+        Box(
             modifier = Modifier
                 .offset(x = animatedOffset.dp)
                 .fillMaxWidth()
-        )
+        ) {
+            TodoCard(
+                todo = todo,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            val colorScheme = MaterialTheme.colorScheme
+            // 绘制圆形动画
+            longPressPosition?.let { position ->
+                Canvas(modifier = Modifier
+                    .matchParentSize()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                    clipRect {
+                        drawCircle(
+                            color = colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            radius = animatedRadius,
+                            center = position
+                        )
+                    }
+                }
+            }
+        }
     }
 
     // 删除确认对话框
@@ -192,6 +244,22 @@ fun SwipeableTodoCard(
                 ) {
                     Text(text = "取消")
                 }
+            }
+        )
+    }
+
+    if (showEditDialog) {
+        EditTodoDialog(
+            todo = todo,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { title, description, tag, dueDate, priority ->
+                todo.title = title
+                todo.description = description
+                todo.tag = tag
+                todo.dueDate = dueDate
+                todo.priority = priority
+                onEdit(todo)
+                showEditDialog = false
             }
         )
     }
@@ -240,7 +308,7 @@ fun TodoCard(
             // 描述
             if (todo.description?.isNotBlank() == true) {
                 Text(
-                    text = todo.description,
+                    text = todo.description!!,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth(),
                     color = if (todo.completed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
@@ -297,7 +365,14 @@ fun PriorityIndicator(priority: String) {
     }
 }
 
-
+@Composable
+fun EditDialog(todo: Todo, onDismiss: () -> Unit, onConfirm: (Todo) -> Unit) {
+    EditTodoDialog(
+        todo = todo,
+        onDismiss = onDismiss,
+        onConfirm = { title, description, tag, dueDate, priority -> Unit}
+    )
+}
 
 @Preview
 @Composable

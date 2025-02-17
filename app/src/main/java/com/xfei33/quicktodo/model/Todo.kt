@@ -8,13 +8,13 @@ import java.util.UUID
 @Entity(tableName = "todos")
 data class Todo(
     @PrimaryKey val id: UUID = UUID.randomUUID(),
-    val title: String,
-    val description: String? = null,
-    val dueDate: LocalDateTime,
+    var title: String,
+    var description: String? = null,
+    var dueDate: LocalDateTime,
     val userId: Long,
-    val priority: String?,
-    val completed: Boolean = false,
-    val tag: String,
+    var priority: String?,
+    var completed: Boolean = false,
+    var tag: String,
     var lastModified: LocalDateTime = LocalDateTime.now(),
     var deleted: Boolean = false
 )

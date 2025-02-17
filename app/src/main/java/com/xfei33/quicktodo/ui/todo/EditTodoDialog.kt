@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.xfei33.quicktodo.R
+import com.xfei33.quicktodo.model.Todo
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -50,15 +48,16 @@ import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewTodoDialog(
+fun EditTodoDialog(
+    todo: Todo,
     onDismiss: () -> Unit,
     onConfirm: (String, String?, String, LocalDateTime, String) -> Unit,
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var tag by remember { mutableStateOf("") }
-    var dueDate by remember { mutableStateOf(LocalDateTime.now()) }
-    var priority by remember { mutableStateOf("中") } // 默认优先级为“中”
+    var title by remember { mutableStateOf(todo.title) }
+    var description by remember { mutableStateOf(todo.description) }
+    var tag by remember { mutableStateOf(todo.tag) }
+    var dueDate by remember { mutableStateOf(todo.dueDate) }
+    var priority by remember { mutableStateOf(todo.priority) } // 默认优先级为“中”
 
     var isTimePickerDialogVisible by remember { mutableStateOf(false) }
     var isDatePickerDialogVisible by remember { mutableStateOf(false) }
@@ -85,7 +84,7 @@ fun NewTodoDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "新建任务",
+                    text = "编辑",
                     style = MaterialTheme.typography.titleLarge
                 )
 
@@ -100,7 +99,7 @@ fun NewTodoDialog(
 
                 // 描述输入
                 OutlinedTextField(
-                    value = description,
+                    value = description?: "",
                     onValueChange = { description = it },
                     label = { Text("描述") },
                     modifier = Modifier.fillMaxWidth(),
@@ -204,7 +203,7 @@ fun NewTodoDialog(
                         Text("取消")
                     }
                     TextButton(onClick = {
-                        onConfirm(title, description, tag, dueDate, priority)
+                        onConfirm(title, description, tag, dueDate, priority?: "MEDIUM")
                     }) {
                         Text("确定")
                     }
@@ -253,41 +252,41 @@ fun NewTodoDialog(
     }
 }
 
-@Composable
-fun PriorityButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-        ),
-        modifier = Modifier.fillMaxWidth(1f)// 确保每个按钮宽度相同
-    ) {
-        Text(text)
-    }
-}
-
-@Composable
-fun TimePickerDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        dismissButton = {
-            TextButton (onClick = { onDismiss() }) {
-                Text("Dismiss")
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm() }) {
-                Text("OK")
-            }
-        },
-        text = { content() }
-    )
-}
+//@Composable
+//fun PriorityButton(
+//    text: String,
+//    isSelected: Boolean,
+//    onClick: () -> Unit
+//) {
+//    Button(
+//        onClick = onClick,
+//        colors = ButtonDefaults.buttonColors(
+//            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+//        ),
+//        modifier = Modifier.fillMaxWidth(1f)// 确保每个按钮宽度相同
+//    ) {
+//        Text(text)
+//    }
+//}
+//
+//@Composable
+//fun TimePickerDialog(
+//    onDismiss: () -> Unit,
+//    onConfirm: () -> Unit,
+//    content: @Composable () -> Unit
+//) {
+//    AlertDialog(
+//        onDismissRequest = onDismiss,
+//        dismissButton = {
+//            TextButton (onClick = { onDismiss() }) {
+//                Text("Dismiss")
+//            }
+//        },
+//        confirmButton = {
+//            TextButton(onClick = { onConfirm() }) {
+//                Text("OK")
+//            }
+//        },
+//        text = { content() }
+//    )
+//}
