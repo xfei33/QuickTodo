@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -173,6 +171,8 @@ fun FocusScreen(navController: NavController) {
                     textAlign = TextAlign.Center
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // 设置时间滑块（仅在空闲状态显示）
                 if (timerState == TimerState.IDLE) {
                     Column(
@@ -191,61 +191,51 @@ fun FocusScreen(navController: NavController) {
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            ),
-                            shape = RoundedCornerShape(24.dp)
+                        Column(
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp)
-                            ) {
-                                Slider(
-                                    value = selectedMinutes,
-                                    onValueChange = { selectedMinutes = it },
-                                    valueRange = 5f..180f,
-                                    steps = 174,  // (180-5)
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = MaterialTheme.colorScheme.primary,
-                                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                                        inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                    )
+                            Slider(
+                                value = selectedMinutes,
+                                onValueChange = { selectedMinutes = it },
+                                valueRange = 5f..180f,
+                                steps = 174,  // (180-5)
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
                                 )
+                            )
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    //.padding(horizontal = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "5分钟",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        text = "120分钟",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                                    )
-                                }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                //.padding(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "5分钟",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = "120分钟",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                                )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            QuickTimeButton(45, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-                            QuickTimeButton(60, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-                            QuickTimeButton(120, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-                        }
+//                        Row(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            horizontalArrangement = Arrangement.SpaceEvenly
+//                        ) {
+//                            QuickTimeButton(45, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
+//                            QuickTimeButton(60, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
+//                            QuickTimeButton(120, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
+//                        }
                     }
                 }
 
