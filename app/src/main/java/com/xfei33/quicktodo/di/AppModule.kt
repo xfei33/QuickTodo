@@ -1,11 +1,13 @@
 package com.xfei33.quicktodo.di
 
 import android.content.Context
+import com.xfei33.quicktodo.data.local.dao.MessageDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.db.AppDatabase
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.client.RetrofitClient
+import com.xfei33.quicktodo.data.repository.MessageRepository
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import dagger.Module
 import dagger.Provides
@@ -27,6 +29,9 @@ object AppModule {
     fun provideTodoDao(appDatabase: AppDatabase) = appDatabase.todoDao()
 
     @Provides
+    fun provideMessageDao(appDatabase: AppDatabase) = appDatabase.messageDao()
+
+    @Provides
     @Singleton
     fun provideApiService(): ApiService {
         return RetrofitClient.apiService
@@ -46,5 +51,13 @@ object AppModule {
         todoDao: TodoDao
     ): TodoRepository {
         return TodoRepository(todoDao, apiService, userPreferences)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessageRepository(
+        messageDao: MessageDao
+    ): MessageRepository {
+        return MessageRepository(messageDao)
     }
 }

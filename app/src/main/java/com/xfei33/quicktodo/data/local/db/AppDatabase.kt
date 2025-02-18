@@ -5,19 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.xfei33.quicktodo.data.local.converter.LocalDateTimeConverter
+import com.xfei33.quicktodo.data.local.converter.Converters
+import com.xfei33.quicktodo.data.local.dao.MessageDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
+import com.xfei33.quicktodo.model.Message
 import com.xfei33.quicktodo.model.Todo
 
 @Database(
-    entities = [Todo::class],
-    version = 4,
+    entities = [Todo::class, Message::class],
+    version = 1,
     exportSchema = false
 )
-@TypeConverters(LocalDateTimeConverter::class) // 注册 TypeConverter
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun todoDao(): TodoDao
+    abstract fun messageDao(): MessageDao
 
     companion object {
         @Volatile

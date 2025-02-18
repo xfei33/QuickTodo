@@ -1,7 +1,7 @@
 package com.xfei33.quicktodo.data.remote.api
 
 import androidx.room.TypeConverters
-import com.xfei33.quicktodo.data.local.converter.LocalDateTimeConverter
+import com.xfei33.quicktodo.data.local.converter.Converters
 import com.xfei33.quicktodo.model.Todo
 import retrofit2.Response
 import retrofit2.http.Body
@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 data class AuthRequest(val username: String, val password: String)
 data class AuthResponse(val token: String, val userId: Long)
 
-@TypeConverters(LocalDateTimeConverter::class)
+@TypeConverters(Converters::class)
 interface ApiService {
     @POST("auth/register")
     suspend fun register(@Body request: AuthRequest): Response<Void>
