@@ -7,8 +7,10 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.xfei33.quicktodo.components.AppBottomBar
 import com.xfei33.quicktodo.ui.focus.FocusScreen
+import com.xfei33.quicktodo.ui.message.MessageDetailScreen
 import com.xfei33.quicktodo.ui.message.MessageScreen
 import com.xfei33.quicktodo.ui.profile.ProfileScreen
 import com.xfei33.quicktodo.ui.todo.TodoScreen
@@ -29,7 +31,25 @@ fun MainScreen() {
         ) {
             composable("todo") { TodoScreen() }
             composable("focus") { FocusScreen() }
-            composable("message") { MessageScreen() }
+            composable("message") { 
+                MessageScreen(
+                    onMessageClick = { message ->
+                        navController.navigate(NavRoutes.Main.messageDetail(message.id.toString()))
+                    }
+                ) 
+            }
+            composable(
+                route = NavRoutes.Main.MESSAGE_DETAIL,
+                arguments = listOf(
+                    navArgument("messageId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val messageId = backStackEntry.arguments?.getString("messageId")
+                MessageDetailScreen(
+                    messageId = messageId,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
             composable("profile") { ProfileScreen() }
         }
     }

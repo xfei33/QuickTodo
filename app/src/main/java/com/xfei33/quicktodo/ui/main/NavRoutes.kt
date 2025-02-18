@@ -11,6 +11,9 @@ object NavRoutes {
         const val TODO = "todo"
         const val FOCUS = "focus"
         const val MESSAGE = "message"
+        const val MESSAGE_DETAIL = "message_detail/{messageId}"
         const val PROFILE = "profile"
+        
+        fun messageDetail(messageId: String) = "message_detail/$messageId"
     }
 }
