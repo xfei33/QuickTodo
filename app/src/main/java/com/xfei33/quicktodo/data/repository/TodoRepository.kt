@@ -22,7 +22,9 @@ class TodoRepository @Inject constructor(
             val lastSyncTime = getLastSyncTime()
             val userId = userPreferences.userId.first()!!
             val token = userPreferences.token.first()!!
-
+            if (userId == 0L) {
+                return Result.failure(IllegalStateException("离线用户不需要同步"))
+            }
             // 上传本地未同步数据
             val localIncrementalData = getIncrementalData(userId, lastSyncTime)
             if (localIncrementalData.isNotEmpty()) {
