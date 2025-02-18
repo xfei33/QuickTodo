@@ -28,9 +28,9 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("todo") { TodoScreen() }
-            composable("focus") { FocusScreen(navController) }
-            composable("message") { MessageScreen(navController) }
-            composable("profile") { ProfileScreen(navController) }
+            composable("focus") { FocusScreen() }
+            composable("message") { MessageScreen() }
+            composable("profile") { ProfileScreen() }
         }
     }
 }

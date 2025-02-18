@@ -12,7 +12,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xfei33.quicktodo.R
-import com.xfei33.quicktodo.navigation.NavRoutes
+import com.xfei33.quicktodo.ui.main.NavRoutes
 
 @Composable
 fun AppBottomBar(navController: NavController) {

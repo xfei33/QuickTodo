@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.navigation
+package com.xfei33.quicktodo.ui.main
 
 // 定义所有导航路由
 object NavRoutes {

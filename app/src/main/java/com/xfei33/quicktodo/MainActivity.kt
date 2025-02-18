@@ -27,9 +27,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import com.xfei33.quicktodo.lifecycle.AppLifecycleObserver
-import com.xfei33.quicktodo.navigation.NavRoutes
 import com.xfei33.quicktodo.ui.auth.AuthScreen
 import com.xfei33.quicktodo.ui.main.MainScreen
+import com.xfei33.quicktodo.ui.main.NavRoutes
 import com.xfei33.quicktodo.ui.splash.SplashScreen
 import com.xfei33.quicktodo.ui.theme.QuickTodoTheme
 import dagger.hilt.android.AndroidEntryPoint
