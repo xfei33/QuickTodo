@@ -25,6 +25,7 @@ material = "1.12.0"
 material3AdaptiveAndroid = "1.0.0-alpha06"
 adaptiveNavigationAndroid = "1.0.0"
 graphicsShapesAndroid = "1.0.1"
+firebaseCrashlyticsBuildtools = "3.0.3"
 
 
 [libraries]
@@ -64,6 +65,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-material3-adaptive-android = { group = "androidx.compose.material3", name = "material3-adaptive-android", version.ref = "material3AdaptiveAndroid" }
 androidx-adaptive-navigation-android = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation-android", version.ref = "adaptiveNavigationAndroid" }
 androidx-graphics-shapes-android = { group = "androidx.graphics", name = "graphics-shapes-android", version.ref = "graphicsShapesAndroid" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

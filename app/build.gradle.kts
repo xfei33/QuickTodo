@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.material)
     implementation(libs.androidx.graphics.shapes.android)
+    implementation(libs.firebase.crashlytics.buildtools)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
