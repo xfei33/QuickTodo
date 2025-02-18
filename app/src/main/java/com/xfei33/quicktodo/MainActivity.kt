@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
     lateinit var todoRepository: TodoRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // 注册LifecycleObserver
         lifecycle.addObserver(AppLifecycleObserver(todoRepository))
@@ -51,7 +52,6 @@ class MainActivity : ComponentActivity() {
         }
         requestDndPermission(this)
 
-        enableEdgeToEdge()
         setContent {
             QuickTodoTheme {
                 Surface(
