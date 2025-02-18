@@ -1,14 +1,17 @@
 package com.xfei33.quicktodo.ui.message
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,13 +54,26 @@ fun MessageCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Image(
-                bitmap = message.icon,
-                contentDescription = "消息图标",
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialTheme.shapes.extraLarge)
-            )
+            Box {
+                Image(
+                    bitmap = message.icon,
+                    contentDescription = "消息图标",
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                )
+                if (!message.isRead) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.error,
+                                shape = CircleShape
+                            )
+                            .align(Alignment.TopEnd)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.size(12.dp))
 
@@ -72,7 +88,10 @@ fun MessageCard(
                     Text(
                         text = message.title,
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = if (message.isRead) 
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        else 
+                            MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = formatMessageTime(message.time),
