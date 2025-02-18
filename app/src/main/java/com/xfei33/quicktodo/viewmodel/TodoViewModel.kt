@@ -61,8 +61,12 @@ class TodoViewModel @Inject constructor(
 
     // 切换todo的完成状态
     fun updateTodoCompletionStatus(todo: Todo) {
-        todo.completed =!todo.completed
-        updateTodo(todo)
+        viewModelScope.launch {
+            // 先从数据库获取最新的 todo 数据
+            val currentTodo = todoDao.getTodoById(todo.id) ?: return@launch
+            currentTodo.completed = !currentTodo.completed
+            todoRepository.updateTodo(currentTodo)
+        }
     }
 
     fun addTodo(title: String, description: String?, dueDate: LocalDateTime, priority: String?, tag: String) {
