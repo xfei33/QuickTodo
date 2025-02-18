@@ -144,7 +144,7 @@ fun SwipeableTodoCard(
                         coroutineScope.launch {
                             // 启动圆形扩散动画
                             while (circleRadius < maxRadius) {
-                                circleRadius += 30f
+                                circleRadius += 40f
                                 delay(10)
                             }
                             showDeleteDialog = true // 动画完成后显示删除对话框
@@ -204,7 +204,7 @@ fun SwipeableTodoCard(
                     .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
                     clipRect {
                         drawCircle(
-                            color = colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            color = colorScheme.primaryContainer.copy(alpha = 0.3f),
                             radius = animatedRadius,
                             center = position
                         )
@@ -363,15 +363,6 @@ fun PriorityIndicator(priority: String) {
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
     }
-}
-
-@Composable
-fun EditDialog(todo: Todo, onDismiss: () -> Unit, onConfirm: (Todo) -> Unit) {
-    EditTodoDialog(
-        todo = todo,
-        onDismiss = onDismiss,
-        onConfirm = { title, description, tag, dueDate, priority -> Unit}
-    )
 }
 
 @Preview
