@@ -34,7 +34,10 @@ class NotificationWorker @AssistedInject constructor(
         val content = inputData.getString(TODO_CONTENT) ?: "您的任务“$title”将在3小时内到期。请及时完成。"
 
         // 发送通知
-        sendNotification(title, content)
+        sendNotification(
+            title = "任务即将到期",
+            content = "您的任务“$title”将在3小时内到期。请及时完成。"
+        )
 
         // 创建消息
         val message = Message(

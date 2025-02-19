@@ -64,6 +64,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.graphics.shapes.android)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.monitor)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.hilt.work)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -90,5 +94,9 @@ dependencies {
     implementation(libs.logging.interceptor)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // WorkManager
+    implementation (libs.androidx.work.runtime.ktx)
+    ksp(libs.androidx.hilt.compiler)
 
 }
