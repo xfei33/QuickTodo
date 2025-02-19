@@ -1,14 +1,9 @@
 package com.xfei33.quicktodo.data.local.converter
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.room.TypeConverter
-import java.io.ByteArrayOutputStream
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 
 class Converters {
     @TypeConverter
@@ -22,20 +17,12 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromByteArray(value: ByteArray?): ImageBitmap? {
-        return value?.let {
-            BitmapFactory.decodeByteArray(value, 0, value.size).asImageBitmap()
-        }
+    fun fromUUID(uuid: UUID?): String? {
+        return uuid?.toString()
     }
 
     @TypeConverter
-    fun toByteArray(bitmap: ImageBitmap?): ByteArray? {
-        return bitmap?.let {
-            val bmp = it.asAndroidBitmap()
-            ByteArrayOutputStream().use { stream ->
-                bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                stream.toByteArray()
-            }
-        }
+    fun toUUID(uuid: String?): UUID? {
+        return uuid?.let { UUID.fromString(it) }
     }
 } 
