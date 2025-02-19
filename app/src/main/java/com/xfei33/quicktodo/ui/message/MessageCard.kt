@@ -19,8 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xfei33.quicktodo.R
@@ -56,7 +55,7 @@ fun MessageCard(
         ) {
             Box {
                 Image(
-                    bitmap = message.icon,
+                    painter = painterResource(id = message.iconResId),
                     contentDescription = "消息图标",
                     modifier = Modifier
                         .size(40.dp)
@@ -135,13 +134,13 @@ enum class MessageCategory {
 fun MessageCardPreview() {
     MessageCard(
         message = Message(
-            icon = ImageBitmap.imageResource(R.drawable.icon),
+            iconResId = R.drawable.icon,
             title = "标题",
             sender = "发送者",
             content = "内容",
-            category = 0,
+            category = MessageCategory.SYSTEM.ordinal,
             isRead = false,
             time = LocalDateTime.now()
-        )
+        ),
     ) { /* 添加点击事件处理 */ }
 }

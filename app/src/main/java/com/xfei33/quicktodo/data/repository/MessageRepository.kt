@@ -15,4 +15,4 @@ class MessageRepository @Inject constructor(
     suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
     
     suspend fun insertMessage(message: Message) = messageDao.insertMessage(message)
-} 
+}

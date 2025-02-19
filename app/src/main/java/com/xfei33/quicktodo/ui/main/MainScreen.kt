@@ -27,17 +27,15 @@ fun MainScreen() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "todo",
+            startDestination = NavRoutes.Main.TODO,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("todo") { TodoScreen() }
-            composable("focus") { FocusScreen() }
-            composable("message") { 
+            composable(NavRoutes.Main.TODO) { TodoScreen() }
+            composable(NavRoutes.Main.FOCUS) { FocusScreen() }
+            composable(NavRoutes.Main.MESSAGE) { 
                 MessageScreen(
                     onMessageClick = { message ->
-                        navController.navigate(NavRoutes.Main.messageDetail(message.id.toString())) {
-                            restoreState = true
-                        }
+                        navController.navigate(NavRoutes.Main.messageDetail(message.id.toString()))
                     }
                 ) 
             }
@@ -53,7 +51,7 @@ fun MainScreen() {
                     onBackClick = { navController.popBackStack() }
                 )
             }
-            composable("profile") { ProfileScreen() }
+            composable(NavRoutes.Main.PROFILE) { ProfileScreen() }
         }
     }
 }
