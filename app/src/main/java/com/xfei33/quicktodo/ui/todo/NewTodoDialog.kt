@@ -45,6 +45,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,10 +57,10 @@ fun NewTodoDialog(
     var description by remember { mutableStateOf("") }
     var tag by remember { mutableStateOf("默认") }
     var dueDate by remember { mutableStateOf(LocalDateTime.now()) }
-    var priority by remember { mutableStateOf("MEDIUM") } // 默认优先级为“中”
+    var priority by remember { mutableStateOf("MEDIUM") } // 默认优先级为"中"
 
-    var isTimePickerDialogVisible by remember { mutableStateOf(false) }
     var isDatePickerDialogVisible by remember { mutableStateOf(false) }
+    var isTimePickerDialogVisible by remember { mutableStateOf(false) }
 
     // 日期选择器状态
     val datePickerState = rememberDatePickerState(
@@ -79,8 +80,8 @@ fun NewTodoDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "新建任务",
@@ -114,84 +115,68 @@ fun NewTodoDialog(
                     singleLine = true
                 )
 
-                // 日期和时间选择
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // 日期选择按钮
-                    OutlinedButton(
-                        onClick = {
-                            isDatePickerDialogVisible = true
-                        }
+                // 优先级选择
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "优先级",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        space = 8.dp,
                     ) {
-                        Icon(Icons.Default.DateRange, contentDescription = "截止时间")
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("截止时间")
+                        val options = listOf("低", "中", "高")
+                        options.forEachIndexed { index, option ->
+                            val selected = when (priority) {
+                                "LOW" -> option == "低"
+                                "MEDIUM" -> option == "中"
+                                "HIGH" -> option == "高"
+                                else -> false
+                            }
+                            SegmentedButton(
+                                selected = selected,
+                                onClick = {
+                                    priority = when (option) {
+                                        "低" -> "LOW"
+                                        "中" -> "MEDIUM"
+                                        "高" -> "HIGH"
+                                        else -> priority
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(0.dp)
+                                    .weight(1f)
+                                    .animateContentSize(),
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            ) {
+                                Text(
+                                    text = option,
+                                    style = TextStyle(
+                                        fontSize = 14.sp,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                )
+                            }
+                        }
                     }
-
-//                    // 时间选择按钮
-//                    OutlinedButton(
-//                        onClick = {
-//                            isTimePickerDialogVisible = true
-//                        }
-//                    ) {
-//                        Icon(painterResource(R.drawable.baseline_access_time_24), contentDescription = "选择时间")
-//                        Spacer(modifier = Modifier.width(4.dp))
-//                        Text("选择时间")
-//                    }
                 }
 
-                // 优先级选择
-                Text(
-                    text = "优先级",
-                    style = MaterialTheme.typography.labelLarge
-                )
-
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    space = 8.dp,
+                // 日期选择
+                OutlinedButton(
+                    onClick = {
+                        isDatePickerDialogVisible = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    val options = listOf("低", "中", "高")
-                    options.forEachIndexed() { index,option ->
-                        val selected = when (priority) {
-                            "LOW" -> option == "低"
-                            "MEDIUM" -> option == "中"
-                            "HIGH" -> option == "高"
-                            else -> false
-                        }
-                        SegmentedButton(
-                            selected = selected,
-                            onClick = {
-                                priority = when (option) {
-                                    "低" -> "LOW"
-                                    "中" -> "MEDIUM"
-                                    "高" -> "HIGH"
-                                    else -> priority
-                                }
-                            },
-                            modifier = Modifier
-                                .width(0.dp)
-                                .weight(1f)
-                                //.padding(horizontal = 4.dp) // 添加按钮之间的间距
-                                .animateContentSize(), // 添加动画效果
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size), // 设置按钮形状
-                            colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        ) {
-                            Text(
-                                text = option,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            )
-                        }
-                    }
+                    Icon(Icons.Default.DateRange, contentDescription = "截止日期")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(dueDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
                 }
 
                 // 确定和取消按钮
@@ -202,9 +187,11 @@ fun NewTodoDialog(
                     TextButton(onClick = onDismiss) {
                         Text("取消")
                     }
-                    TextButton(onClick = {
-                        onConfirm(title, description, tag, dueDate, priority)
-                    }) {
+                    Button(
+                        onClick = {
+                            onConfirm(title, description, tag, dueDate, priority)
+                        }
+                    ) {
                         Text("确定")
                     }
                 }
@@ -264,7 +251,7 @@ fun PriorityButton(
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
         ),
-        modifier = Modifier.fillMaxWidth(1f)// 确保每个按钮宽度相同
+        modifier = Modifier.fillMaxWidth(1f) // 确保每个按钮宽度相同
     ) {
         Text(text)
     }
@@ -279,13 +266,13 @@ fun TimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         dismissButton = {
-            TextButton (onClick = { onDismiss() }) {
-                Text("Dismiss")
+            TextButton(onClick = onDismiss) {
+                Text("取消")
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm() }) {
-                Text("OK")
+            TextButton(onClick = onConfirm) {
+                Text("确定")
             }
         },
         text = { content() }
