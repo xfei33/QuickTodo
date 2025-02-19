@@ -1,4 +1,4 @@
-package com.xfei33.quicktodo.work
+package com.xfei33.quicktodo.worker
 
 import android.app.NotificationManager
 import android.content.Context
