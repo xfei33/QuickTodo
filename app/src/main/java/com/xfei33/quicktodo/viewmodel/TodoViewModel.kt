@@ -10,7 +10,7 @@ import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import com.xfei33.quicktodo.model.Todo
-import com.xfei33.quicktodo.work.NotificationWorker
+import com.xfei33.quicktodo.worker.NotificationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
