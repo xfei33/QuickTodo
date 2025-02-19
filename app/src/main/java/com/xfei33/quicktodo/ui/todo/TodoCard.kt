@@ -1,8 +1,7 @@
 package com.xfei33.quicktodo.ui.todo
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,8 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,14 +34,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.ui.theme.QuickTodoTheme
@@ -51,6 +50,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import kotlin.math.roundToInt
 
 enum class SwipeDirection {
     None, Left, Right
@@ -62,100 +62,70 @@ fun SwipeableTodoCard(
     todo: Todo,
     onEdit: (Todo) -> Unit,
     onComplete: (Todo) -> Unit,
-    modifier: Modifier = Modifier,
-    onDelete: (Todo) -> Unit
+    onDelete: (Todo) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val swipeThreshold = with(LocalDensity.current) { 150.dp.toPx() } // 滑动阈值
+    val swipeThreshold = with(LocalDensity.current) { 100.dp.toPx() }
     val coroutineScope = rememberCoroutineScope()
-    var swipeOffset by remember { mutableFloatStateOf(0f) }
-    var swipeDirection by remember { mutableStateOf(SwipeDirection.None) }
-    var isSwiping by remember { mutableStateOf(false) } // 是否正在滑动
-    var showDeleteDialog by remember { mutableStateOf(false) } // 是否显示删除对话框
-    var showEditDialog by remember { mutableStateOf(false) } // 是否显示编辑对话框
-
-    // 长按动画相关状态
-    var longPressPosition by remember { mutableStateOf<Offset?>(null) }
-    var circleRadius by remember { mutableStateOf(0f) }
-    val animatedRadius by animateFloatAsState(
-        targetValue = circleRadius,
-        animationSpec = tween(durationMillis = 300)
-    )
-    // 计算最大半径（足以覆盖整个 Card）
-    val maxRadius = with(LocalDensity.current) {
-        (1200.dp.toPx()) // 根据 Card 的大小调整
+    val swipeAnimatable = remember { Animatable(0f) }
+    val swipeDirection by remember(swipeAnimatable.value) {
+        derivedStateOf {
+            when {
+                swipeAnimatable.value > swipeThreshold -> SwipeDirection.Right
+                swipeAnimatable.value < -swipeThreshold -> SwipeDirection.Left
+                else -> SwipeDirection.None
+            }
+        }
     }
-
-    // 限制滑动最大偏移量
-    val maxSwipeOffset = 100f // 设置最大滑动值
-    // 限制滑动偏移量范围
-    val constrainedSwipeOffset = swipeOffset.coerceIn(-maxSwipeOffset, maxSwipeOffset)
-
-    // 使用动画平滑地回到原始位置
-    val animatedOffset by animateFloatAsState(
-        targetValue = if (isSwiping) constrainedSwipeOffset else 0f,
-        animationSpec = tween(durationMillis = 400),
-    )
+    var isSwiping by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var isLongPressing by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = {
-                        isSwiping = true // 开始滑动
-                    },
+                    onDragStart = { isSwiping = true },
                     onDragEnd = {
-                        when {
-                            swipeDirection == SwipeDirection.Right -> {
-                                coroutineScope.launch {
-                                    onComplete(todo) // 右划标记为已完成
+                        coroutineScope.launch {
+                            when (swipeDirection) {
+                                SwipeDirection.Right -> {
+                                    onComplete(todo)
+                                    swipeAnimatable.animateTo(0f)
+                                }
+                                SwipeDirection.Left -> {
+                                    showEditDialog = true
+                                    swipeAnimatable.animateTo(0f)
+                                }
+                                else -> {
+                                    swipeAnimatable.animateTo(0f, tween(durationMillis = 300))
                                 }
                             }
-
-                            swipeDirection == SwipeDirection.Left -> {
-                                coroutineScope.launch {
-                                    showEditDialog = true // 左划进入编辑界面
-                                }
-                            }
+                            isSwiping = false
                         }
-                        isSwiping = false // 结束滑动
-                        swipeOffset = 0f // 重置偏移量
-                        swipeDirection = SwipeDirection.None // 重置滑动方向
                     },
-                    onHorizontalDrag = { change, dragAmount ->
-                        swipeOffset += dragAmount
-                        when {
-                            swipeOffset > swipeThreshold -> {
-                                swipeDirection = SwipeDirection.Right
-                            }
-
-                            swipeOffset < -swipeThreshold -> {
-                                swipeDirection = SwipeDirection.Left
-                            }
+                    onHorizontalDrag = { _, dragAmount ->
+                        coroutineScope.launch {
+                            swipeAnimatable.snapTo(swipeAnimatable.value + dragAmount)
                         }
                     }
                 )
             }
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onLongPress = { offset ->
-                        longPressPosition = offset // 记录长按位置
-                        circleRadius = 10f // 重置圆形半径
+                    onLongPress = {
+                        showDeleteDialog = true
                         coroutineScope.launch {
-                            // 启动圆形扩散动画
-                            while (circleRadius < maxRadius) {
-                                circleRadius += 40f
-                                delay(10)
-                            }
-                            showDeleteDialog = true // 动画完成后显示删除对话框
-                            longPressPosition = null // 长按结束，清空记录
-                            circleRadius = 0f // 重置圆形半径
+                            isLongPressing = true
+                            delay(200)
+                            isLongPressing = false
                         }
                     }
                 )
             }
     ) {
-        // 背景指示器
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -164,104 +134,75 @@ fun SwipeableTodoCard(
                     when (swipeDirection) {
                         SwipeDirection.Right -> MaterialTheme.colorScheme.primaryContainer
                         SwipeDirection.Left -> MaterialTheme.colorScheme.secondaryContainer
-                        SwipeDirection.None -> Color.Transparent
+                        else -> Color.Transparent
                     }
-                )
-                .padding(16.dp),
+                ),
             contentAlignment = when (swipeDirection) {
                 SwipeDirection.Right -> Alignment.CenterStart
                 SwipeDirection.Left -> Alignment.CenterEnd
-                SwipeDirection.None -> Alignment.Center
+                else -> Alignment.Center
             }
         ) {
             Text(
                 text = when (swipeDirection) {
-                    SwipeDirection.Right -> if (todo.completed) "取消完成" else "已完成"
+                    SwipeDirection.Right -> if (todo.completed) "标记为未完成" else "标记为完成"
                     SwipeDirection.Left -> "编辑"
-                    SwipeDirection.None -> ""
+                    else -> ""
                 },
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp)
             )
         }
 
-        // TodoCard
-        Box(
-            modifier = Modifier
-                .offset(x = animatedOffset.dp)
-                .fillMaxWidth()
-        ) {
-            TodoCard(
-                todo = todo,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            val colorScheme = MaterialTheme.colorScheme
-            // 绘制圆形动画
-            longPressPosition?.let { position ->
-                Canvas(modifier = Modifier
-                    .matchParentSize()
-                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
-                    clipRect {
-                        drawCircle(
-                            color = colorScheme.primaryContainer.copy(alpha = 0.3f),
-                            radius = animatedRadius,
-                            center = position
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // 删除确认对话框
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showDeleteDialog = false // 关闭对话框
-            },
-            title = {
-                Text(text = "删除任务")
-            },
-            text = {
-                Text(text = "确定要删除任务“${todo.title}”吗？")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete(todo) // 确认删除
-                        showDeleteDialog = false // 关闭对话框
-                    }
-                ) {
-                    Text(text = "删除")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false // 关闭对话框
-                    }
-                ) {
-                    Text(text = "取消")
-                }
-            }
-        )
-    }
-
-    if (showEditDialog) {
-        EditTodoDialog(
+        TodoCard(
             todo = todo,
-            onDismiss = { showEditDialog = false },
-            onConfirm = { title, description, tag, dueDate, priority ->
-                todo.title = title
-                todo.description = description
-                todo.tag = tag
-                todo.dueDate = dueDate
-                todo.priority = priority
-                onEdit(todo)
-                showEditDialog = false
-            }
+            modifier = Modifier
+                .offset { IntOffset(swipeAnimatable.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .scale(if (isLongPressing) 0.98f else 1f)
         )
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("删除任务") },
+                text = { Text("确定要删除任务“${todo.title}”吗？") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            onDelete(todo)
+                            showDeleteDialog = false
+                        }
+                    ) {
+                        Text("删除")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) {
+                        Text("取消")
+                    }
+                }
+            )
+        }
+
+        if (showEditDialog) {
+            EditTodoDialog(
+                todo = todo,
+                onDismiss = { showEditDialog = false },
+                onConfirm = { title, description, tag, dueDate, priority ->
+                    todo.title = title
+                    todo.description = description
+                    todo.tag = tag
+                    todo.dueDate = dueDate
+                    todo.priority = priority
+                    onEdit(todo)
+                    showEditDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -286,7 +227,6 @@ fun TodoCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // 标题和优先级
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -305,7 +245,6 @@ fun TodoCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 描述
             if (todo.description?.isNotBlank() == true) {
                 Text(
                     text = todo.description!!,
@@ -316,7 +255,6 @@ fun TodoCard(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // 截止日期和分类标签
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -339,8 +277,6 @@ fun TodoCard(
     }
 }
 
-
-// 优先级指示器
 @Composable
 fun PriorityIndicator(priority: String) {
     val (text, color) = when (priority) {
