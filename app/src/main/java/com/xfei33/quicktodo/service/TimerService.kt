@@ -1,7 +1,5 @@
 package com.xfei33.quicktodo.service
 
-import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
@@ -13,6 +11,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.xfei33.quicktodo.MainActivity
 import com.xfei33.quicktodo.R
+import com.xfei33.quicktodo.notification.NotificationChannels
 import com.xfei33.quicktodo.ui.focus.TimerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +47,6 @@ class TimerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
         notificationManager = getSystemService(NotificationManager::class.java)
     }
 
@@ -107,37 +105,7 @@ class TimerService : Service() {
         }
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "计时器服务",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "显示计时器运行状态"
-            }
-
-            val completionChannel = NotificationChannel(
-                COMPLETION_CHANNEL_ID,
-                "计时完成通知",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "计时完成提醒"
-                setSound(
-                    android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION),
-                    Notification.AUDIO_ATTRIBUTES_DEFAULT
-                )
-                enableVibration(true)
-                vibrationPattern = longArrayOf(500, 500, 500)
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-            notificationManager.createNotificationChannel(completionChannel)
-        }
-    }
-
-    private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun createNotification() = NotificationCompat.Builder(this, NotificationChannels.TIMER_CHANNEL_ID)
         .setContentTitle("专注计时器")
         .setContentText(formatTime(_remainingSeconds.value))
         .setSmallIcon(R.drawable.ic_launcher_foreground)

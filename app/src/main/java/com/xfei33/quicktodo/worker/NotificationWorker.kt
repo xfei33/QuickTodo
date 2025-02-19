@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import com.xfei33.quicktodo.R
 import com.xfei33.quicktodo.data.repository.MessageRepository
 import com.xfei33.quicktodo.model.Message
+import com.xfei33.quicktodo.notification.NotificationChannels
 import com.xfei33.quicktodo.ui.message.MessageCategory
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -57,7 +58,7 @@ class NotificationWorker @AssistedInject constructor(
     private fun sendNotification(title: String, content: String) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val notification = NotificationCompat.Builder(applicationContext, "todos_channel")
+        val notification = NotificationCompat.Builder(applicationContext, NotificationChannels.TODOS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(content)
