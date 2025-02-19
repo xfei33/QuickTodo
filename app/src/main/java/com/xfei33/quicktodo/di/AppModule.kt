@@ -1,6 +1,7 @@
 package com.xfei33.quicktodo.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.xfei33.quicktodo.data.local.dao.MessageDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.db.AppDatabase
@@ -21,7 +22,7 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return AppDatabase.getDatabase(context)
     }
 
@@ -59,5 +60,11 @@ object AppModule {
         messageDao: MessageDao
     ): MessageRepository {
         return MessageRepository(messageDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
+        return WorkManager.getInstance(context)
     }
 }
