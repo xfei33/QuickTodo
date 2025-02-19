@@ -9,7 +9,7 @@ import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MassageTopBar() {
+fun MessageTopBar() {
     TopAppBar(
         title = {
             Text(
@@ -21,6 +21,6 @@ fun MassageTopBar() {
 }
 @Preview
 @Composable
-fun PreviewMassageTopBar() {
-    MassageTopBar()
+fun PreviewMessageTopBar() {
+    MessageTopBar()
 }
