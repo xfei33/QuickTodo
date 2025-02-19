@@ -34,7 +34,7 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
     TodoContent(
         todos = todos,
         onAddTodo = { title, description, tag, dueDate, priority ->
-            viewModel.addTodo(title, description, dueDate, priority, tag)
+            viewModel.addTodo(title, description, tag, dueDate, priority)
         },
         onDeleteTodo = { todo -> viewModel.deleteTodo(todo) },
         onCompletedChange = { todo -> viewModel.updateTodoCompletionStatus(todo) },
