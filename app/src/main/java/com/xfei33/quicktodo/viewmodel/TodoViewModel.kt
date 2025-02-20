@@ -107,7 +107,7 @@ class TodoViewModel @Inject constructor(
     }
 
     private fun scheduleNotification(todo: Todo) {
-        val notificationTime = todo.dueDate.minusHours(3)
+        val notificationTime = todo.dueDate.minusHours(1)
         val currentTime = LocalDateTime.now()
         val delayMillis = Duration.between(currentTime, notificationTime).toMillis()
 
