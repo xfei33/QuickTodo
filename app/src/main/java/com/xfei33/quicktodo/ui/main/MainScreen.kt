@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xfei33.quicktodo.components.AppBottomBar
@@ -18,11 +19,20 @@ import com.xfei33.quicktodo.ui.todo.TodoScreen
 
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController() // 使用独立的 NavController 管理主界面导航
+    val navController = rememberNavController()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
 
     Scaffold(
         bottomBar = {
-            AppBottomBar(navController = navController) // 在主界面显示 AppBottomBar
+            // 只在主要导航页面显示底部导航栏
+            if (currentRoute in listOf(
+                NavRoutes.Main.TODO,
+                NavRoutes.Main.FOCUS,
+                NavRoutes.Main.MESSAGE,
+                NavRoutes.Main.PROFILE
+            )) {
+                AppBottomBar(navController = navController)
+            }
         }
     ) { innerPadding ->
         NavHost(
