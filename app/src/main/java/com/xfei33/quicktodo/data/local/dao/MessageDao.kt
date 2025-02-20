@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.xfei33.quicktodo.model.Message
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 @Dao
 interface MessageDao {
@@ -14,7 +15,7 @@ interface MessageDao {
     fun getAllMessages(): Flow<List<Message>>
     
     @Query("SELECT * FROM messages WHERE id = :id")
-    suspend fun getMessageById(id: String): Message?
+    suspend fun getMessageById(id: UUID): Message?
     
     @Update
     suspend fun updateMessage(message: Message)

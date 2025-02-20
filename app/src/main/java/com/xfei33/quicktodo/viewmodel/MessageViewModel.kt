@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,7 +31,6 @@ class MessageViewModel @Inject constructor(
 
     fun getMessageById(messageId: String) {
         viewModelScope.launch {
-            val uuid = UUID.fromString(messageId)
             messageRepository.getMessageById(messageId)?.let { message ->
                 _currentMessage.value = message
             }
@@ -41,9 +39,11 @@ class MessageViewModel @Inject constructor(
 
     fun markMessageAsRead(messageId: String) {
         viewModelScope.launch {
-            val uuid = UUID.fromString(messageId)
-            _messages.value.find { it.id == uuid }?.let { message ->
-                messageRepository.updateMessage(message.copy(isRead = true))
+            messageRepository.getMessageById(messageId)?.let { message ->
+                if (!message.isRead) {
+                    messageRepository.updateMessage(message.copy(isRead = true))
+                    _currentMessage.value = message.copy(isRead = true)
+                }
             }
         }
     }
