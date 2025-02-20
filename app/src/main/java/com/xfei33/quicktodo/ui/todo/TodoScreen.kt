@@ -1,5 +1,6 @@
 package com.xfei33.quicktodo.ui.todo
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -83,7 +85,9 @@ fun TodoContent(
                 modifier = Modifier.padding(start = 20.dp, bottom = 16.dp)
             )
 
-            if (showTodayOnly) {
+            if (todos.isEmpty()) {
+                EmptyState()
+            } else if (showTodayOnly) {
                 // 今日视图
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(todos) { todo ->
@@ -200,6 +204,26 @@ fun PreviewTodoContentWithDialog() {
             onCompletedChange = {},
             onEditTodo = {},
             onSearch = {}
+        )
+    }
+}
+
+@Composable
+fun EmptyState() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "这儿没什么事",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        )
+        Text(
+            text = "去休息休息吧☺\uFE0F",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
         )
     }
 }
