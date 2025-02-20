@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -40,8 +43,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -50,18 +55,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import com.xfei33.quicktodo.service.TimerService
 import com.xfei33.quicktodo.viewmodel.FocusViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
 @Preview(showBackground = true)
 @Composable
 fun FocusScreenPreview() {
-    val previewNavController = rememberNavController()
     MaterialTheme {
         Surface {
             FocusScreen()
@@ -153,186 +155,251 @@ fun FocusScreen(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
-                // 中间部分：时间显示和进度
-                Box(
-                    modifier = Modifier
-                        .height(280.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val progress = if (isCountDown && timerState != TimerState.IDLE) {
-                        remainingSeconds.toFloat() / (selectedMinutes * 60)
-                    } else 1f
-
-                    // 在 Canvas 外部获取颜色
-                    val primaryColor = MaterialTheme.colorScheme.primary
-
-                    Canvas(
-                        modifier = Modifier
-                            .size(280.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = {
-                                        when (timerState) {
-                                            TimerState.RUNNING -> {
-                                                viewModel.updatePausedSeconds(remainingSeconds)
-                                                timerService?.pauseTimer()
-                                            }
-                                            TimerState.PAUSED -> {
-                                                timerService?.resumeTimer(pausedSeconds, isCountDown)
-                                            }
-                                            else -> {}
-                                        }
-                                    }
-                                )
-                            }
-                    ) {
-                        val strokeWidth = 15.dp.toPx()
-                        val diameter = size.minDimension - strokeWidth
-                        val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
-
-                        drawArc(
-                            color = primaryColor.copy(alpha = 0.3f),
-                            startAngle = 0f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = Size(diameter, diameter),
-                            style = Stroke(width = strokeWidth)
-                        )
-
-                        drawArc(
-                            color = primaryColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f * progress,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = Size(diameter, diameter),
-                            style = Stroke(width = strokeWidth)
+                TimerDisplay(
+                    isCountDown = isCountDown,
+                    timerState = timerState,
+                    remainingSeconds = remainingSeconds,
+                    selectedMinutes = selectedMinutes,
+                    formatTime = ::formatTime,
+                    primaryColor = MaterialTheme.colorScheme.primary,
+                    onDoubleTap = {
+                        handleTimerDoubleTap(
+                            timerState,
+                            remainingSeconds,
+                            pausedSeconds,
+                            isCountDown,
+                            timerService,
+                            viewModel
                         )
                     }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        // 时间显示
-                        Text(
-                            text = formatTime(remainingSeconds),
-                            style = MaterialTheme.typography.displayLarge,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
-
-
-                Text(
-                    text = "计时开始时，通知将被暂时屏蔽",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
                 )
-
+                NotificationText()
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // 设置时间滑块（仅在空闲状态显示）
                 if (timerState == TimerState.IDLE) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "${selectedMinutes.toInt()} 分钟",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Slider(
-                                value = selectedMinutes,
-                                onValueChange = { viewModel.updateSelectedMinutes(it) },
-                                valueRange = 5f..180f,
-                                steps = 174,  // (180-5)
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = SliderDefaults.colors(
-                                    thumbColor = MaterialTheme.colorScheme.primary,
-                                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                )
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                //.padding(horizontal = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "5分钟",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = "120分钟",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-//                        Row(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            horizontalArrangement = Arrangement.SpaceEvenly
-//                        ) {
-//                            QuickTimeButton(45, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-//                            QuickTimeButton(60, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-//                            QuickTimeButton(120, selectedMinutes, onTimeSelected = { selectedMinutes = it.toFloat() })
-//                        }
-                    }
-                }
-
-                // 底部按钮
-                Button(
-                    onClick = {
-                        when (timerState) {
-                            TimerState.IDLE -> {
-                                val totalSeconds = selectedMinutes.toInt() * 60L
-                                timerService?.startTimer(totalSeconds, isCountDown)
-                            }
-                            TimerState.RUNNING, TimerState.PAUSED -> {
-                                timerService?.stopTimer()
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text(
-                        text = when (timerState) {
-                            TimerState.IDLE -> if (isCountDown) "开始专注" else "开始计时"
-                            TimerState.RUNNING -> "结束"
-                            TimerState.PAUSED -> "结束"
-                        },
-                        style = MaterialTheme.typography.bodyLarge
+                    TimerSlider(
+                        selectedMinutes = selectedMinutes,
+                        onValueChange = { viewModel.updateSelectedMinutes(it) }
                     )
                 }
+                ActionButton(
+                    timerState = timerState,
+                    isCountDown = isCountDown,
+                    selectedMinutes = selectedMinutes,
+                    timerService = timerService
+                )
             }
         }
+    }
+}
+
+@Composable
+fun TimerDisplay(
+    isCountDown: Boolean,
+    timerState: TimerState,
+    remainingSeconds: Long,
+    selectedMinutes: Float,
+    formatTime: (Long) -> String,
+    primaryColor: Color,
+    onDoubleTap: () -> Unit
+) {
+    var scale by remember { mutableStateOf(1f) }
+    val animatedScale by animateFloatAsState(
+        targetValue = scale,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scale"
+    )
+
+    Box(
+        modifier = Modifier.height(280.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        val progress = if (isCountDown && timerState != TimerState.IDLE) {
+            remainingSeconds.toFloat() / (selectedMinutes * 60)
+        } else 1f
+        val scope = rememberCoroutineScope()
+        Canvas(
+            modifier = Modifier
+                .size(280.dp)
+                .scale(animatedScale)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = { offset -> 
+                            scale = 0.9f  // 触发缩小动画
+                            onDoubleTap()
+                            // 延迟恢复原始大小
+                            scope.launch {
+                                delay(100)
+                                scale = 1f
+                            }
+                        }
+                    )
+                }
+        ) {
+            val strokeWidth = 15.dp.toPx()
+            val diameter = size.minDimension - strokeWidth
+            val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
+
+            drawArc(
+                color = primaryColor.copy(alpha = 0.3f),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+
+            drawArc(
+                color = primaryColor,
+                startAngle = -90f,
+                sweepAngle = 360f * progress,
+                useCenter = false,
+                topLeft = topLeft,
+                size = Size(diameter, diameter),
+                style = Stroke(width = strokeWidth)
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = formatTime(remainingSeconds),
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+    }
+}
+
+@Composable
+fun NotificationText() {
+    Text(
+        text = "计时开始时，通知将被暂时屏蔽",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        textAlign = TextAlign.Center
+    )
+}
+
+@Composable
+fun TimerSlider(
+    selectedMinutes: Float,
+    onValueChange: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "${selectedMinutes.toInt()} 分钟",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Medium
+            ),
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Slider(
+                value = selectedMinutes,
+                onValueChange = onValueChange,
+                valueRange = 5f..180f,
+                steps = 174,  // (180-5)
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                )
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "5分钟",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = "120分钟",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+fun ActionButton(
+    timerState: TimerState,
+    isCountDown: Boolean,
+    selectedMinutes: Float,
+    timerService: TimerService?
+) {
+    Button(
+        onClick = {
+            when (timerState) {
+                TimerState.IDLE -> {
+                    val totalSeconds = selectedMinutes.toInt() * 60L
+                    timerService?.startTimer(totalSeconds, isCountDown)
+                }
+                TimerState.RUNNING, TimerState.PAUSED -> {
+                    timerService?.stopTimer()
+                }
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .height(56.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Text(
+            text = when (timerState) {
+                TimerState.IDLE -> if (isCountDown) "开始专注" else "开始计时"
+                TimerState.RUNNING, TimerState.PAUSED -> "结束"
+            },
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+private fun handleTimerDoubleTap(
+    timerState: TimerState,
+    remainingSeconds: Long,
+    pausedSeconds: Long,
+    isCountDown: Boolean,
+    timerService: TimerService?,
+    viewModel: FocusViewModel
+) {
+    when (timerState) {
+        TimerState.RUNNING -> {
+            viewModel.updatePausedSeconds(remainingSeconds)
+            timerService?.pauseTimer()
+        }
+        TimerState.PAUSED -> {
+            timerService?.resumeTimer(pausedSeconds, isCountDown)
+        }
+        else -> {}
     }
 }
 
