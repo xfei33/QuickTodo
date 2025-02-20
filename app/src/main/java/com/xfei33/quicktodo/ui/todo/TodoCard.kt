@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -167,7 +171,7 @@ fun SwipeableTodoCard(
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("删除任务") },
-                text = { Text("确定要删除任务“${todo.title}”吗？") },
+                text = { Text("确定要删除任务“${todo.title}”?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -260,19 +264,45 @@ fun TodoCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "截止日期: ${todo.dueDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (todo.completed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "截止时间",
+                        modifier = Modifier.size(16.dp),
+                        tint = if (todo.completed) 
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        else 
+                            MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    val now = LocalDateTime.now()
+                    val dueDate = todo.dueDate
+                    val formattedTime = when {
+                        dueDate.toLocalDate() == now.toLocalDate() -> "今天 ${dueDate.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                        dueDate.toLocalDate() == now.plusDays(1).toLocalDate() -> "明天 ${dueDate.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                        dueDate.toLocalDate() == now.minusDays(1).toLocalDate() -> "昨天 ${dueDate.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                        dueDate.year == now.year -> dueDate.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm"))
+                        else -> dueDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm"))
+                    }
+                    Text(
+                        text = formattedTime,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (todo.completed)
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        else if (dueDate.isBefore(now))
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.primary
+                    )
+                }
                 FilterChip(
                     selected = true,
                     onClick = { /* Handle tag click */ },
                     label = { Text(text = todo.tag) }
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

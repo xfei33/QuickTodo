@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -35,10 +36,13 @@ class TodoViewModel @Inject constructor(
     private val _userId = MutableStateFlow<Long>(0L)
     val userId: StateFlow<Long> get() = _userId
 
+    private val _showTodayOnly = MutableStateFlow(true)
+    val showTodayOnly: StateFlow<Boolean> = _showTodayOnly
+
     private var originalTodos = emptyList<Todo>()
 
     init {
-        viewModelScope.launch() {
+        viewModelScope.launch {
             _userId.value = userPreferences.userId.first()!!
             loadTodos()
         }
@@ -48,21 +52,47 @@ class TodoViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             todoDao.getNotDeletedTodosByUser(userId.value).collect { todos ->
                 originalTodos = todos
-                _todos.value = todos
+                filterTodos()
             }
         }
     }
 
+    private fun filterTodos() {
+        val filteredTodos = if (showTodayOnly.value) {
+            val today = LocalDate.now()
+            originalTodos.filter { todo ->
+                todo.dueDate.toLocalDate() == today
+            }
+        } else {
+            originalTodos
+        }
+        _todos.value = filteredTodos
+    }
+
+    fun toggleShowTodayOnly() {
+        _showTodayOnly.value = !_showTodayOnly.value
+        filterTodos()
+    }
+
     fun searchTodos(query: String) {
         if (query.isBlank()) {
-            _todos.value = originalTodos
+            filterTodos()
             return
         }
 
-        _todos.value = originalTodos.filter { todo ->
+        val searchResults = originalTodos.filter { todo ->
             todo.title.contains(query, ignoreCase = true) ||
                     (todo.description?.contains(query, ignoreCase = true) ?: false) ||
                     todo.tag.contains(query, ignoreCase = true)
+        }
+
+        _todos.value = if (showTodayOnly.value) {
+            val today = LocalDate.now()
+            searchResults.filter { todo ->
+                todo.dueDate.toLocalDate() == today
+            }
+        } else {
+            searchResults
         }
     }
 
@@ -136,3 +166,4 @@ class TodoViewModel @Inject constructor(
         workManager.cancelUniqueWork("todo_notification_${todo.id}")
     }
 }
+

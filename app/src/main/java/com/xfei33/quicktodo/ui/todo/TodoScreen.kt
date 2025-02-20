@@ -24,15 +24,20 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.viewmodel.TodoViewModel
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Composable
 fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
     val todos by viewModel.todos.collectAsState(initial = emptyList())
+    val showTodayOnly by viewModel.showTodayOnly.collectAsState(initial = true)
 
     TodoContent(
         todos = todos,
+        showTodayOnly = showTodayOnly,
+        onToggleView = { viewModel.toggleShowTodayOnly() },
         onAddTodo = { title, description, tag, dueDate, priority ->
             viewModel.addTodo(title, description, tag, dueDate, priority)
         },
@@ -46,6 +51,8 @@ fun TodoScreen(viewModel: TodoViewModel = hiltViewModel()) {
 @Composable
 fun TodoContent(
     todos: List<Todo>,
+    showTodayOnly: Boolean,
+    onToggleView: () -> Unit,
     onAddTodo: (String, String?, String, LocalDateTime, String) -> Unit,
     onDeleteTodo: (Todo) -> Unit,
     onCompletedChange: (Todo) -> Unit,
@@ -57,31 +64,58 @@ fun TodoContent(
     Scaffold(
         topBar = {
             AppTopBar(
+                showTodayOnly = showTodayOnly,
+                onToggleView = onToggleView,
                 onSearchTextChange = { query -> onSearch(query) }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreateDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Todo")
+                Icon(Icons.Default.Add, contentDescription = "添加待办")
             }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-
             Text(
                 text = "花开堪折直须折，莫待无花空折枝。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 modifier = Modifier.padding(start = 20.dp, bottom = 16.dp)
             )
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(todos) { todo ->
-                    SwipeableTodoCard(
-                        todo = todo,
-                        onEdit = { onEditTodo(todo) },
-                        onComplete = { onCompletedChange(todo) },
-                        onDelete = { onDeleteTodo(todo) },
-                    )
+
+            if (showTodayOnly) {
+                // 今日视图
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(todos) { todo ->
+                        SwipeableTodoCard(
+                            todo = todo,
+                            onEdit = { onEditTodo(todo) },
+                            onComplete = { onCompletedChange(todo) },
+                            onDelete = { onDeleteTodo(todo) }
+                        )
+                    }
+                }
+            } else {
+                // 日程视图
+                val groupedTodos = todos.groupBy { it.dueDate.toLocalDate() }
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    groupedTodos.forEach { (date, todosForDate) ->
+                        item {
+                            Text(
+                                text = formatDate(date),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                        items(todosForDate) { todo ->
+                            SwipeableTodoCard(
+                                todo = todo,
+                                onEdit = { onEditTodo(todo) },
+                                onComplete = { onCompletedChange(todo) },
+                                onDelete = { onDeleteTodo(todo) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -95,6 +129,19 @@ fun TodoContent(
                 showCreateDialog = false
             }
         )
+    }
+}
+
+private fun formatDate(date: LocalDate): String {
+    val yesterday = LocalDate.now().minusDays(1)
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+    
+    return when(date) {
+        yesterday -> "昨天"
+        today -> "今天"
+        tomorrow -> "明天"
+        else -> date.format(DateTimeFormatter.ofPattern("M月d日"))
     }
 }
 
@@ -129,6 +176,8 @@ fun PreviewTodoContent() {
                     deleted = false
                 )
             ),
+            showTodayOnly = true,
+            onToggleView = {},
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             onCompletedChange = {},
@@ -144,6 +193,8 @@ fun PreviewTodoContentWithDialog() {
     MaterialTheme {
         TodoContent(
             todos = emptyList(),
+            showTodayOnly = true,
+            onToggleView = {},
             onAddTodo = { _, _, _, _, _ -> },
             onDeleteTodo = {},
             onCompletedChange = {},
