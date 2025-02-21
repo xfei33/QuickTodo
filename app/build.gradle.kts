@@ -99,4 +99,12 @@ dependencies {
     implementation (libs.androidx.work.runtime.ktx)
     ksp(libs.androidx.hilt.compiler)
 
+//    // Vico
+//    implementation(libs.vico.compose)
+//    implementation(libs.vico.compose.m2)
+//    implementation(libs.vico.compose.m3)
+//    implementation(libs.vico.views)
+    // coil
+    implementation(libs.coil.kt.coil.compose)
+
 }

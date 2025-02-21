@@ -19,10 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.xfei33.quicktodo.R
+import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.xfei33.quicktodo.model.Message
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -55,7 +57,13 @@ fun MessageCard(
         ) {
             Box {
                 Image(
-                    painter = painterResource(id = message.iconResId),
+                    painter = rememberAsyncImagePainter(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(message.iconUrl)
+                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .build()
+                    ),
                     contentDescription = "消息图标",
                     modifier = Modifier
                         .size(40.dp)
@@ -134,7 +142,7 @@ enum class MessageCategory {
 fun MessageCardPreview() {
     MessageCard(
         message = Message(
-            iconResId = R.drawable.icon,
+            iconUrl = "android.resource://com.xfei33.quicktodo/drawable/ic_message",
             title = "标题",
             sender = "发送者",
             content = "内容",

@@ -43,7 +43,7 @@ class NotificationWorker @AssistedInject constructor(
 
         // 创建消息
         val message = Message(
-            iconResId = R.drawable.icon,
+            iconUrl = "android.resource://com.xfei33.quicktodo/drawable/icon",
             title = "待办临期提醒",
             sender = "系统",
             content = "您的任务“$title”将在1小时内到期。请及时完成。",

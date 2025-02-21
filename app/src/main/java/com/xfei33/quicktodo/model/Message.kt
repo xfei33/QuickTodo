@@ -8,7 +8,7 @@ import java.util.UUID
 @Entity(tableName = "messages")
 data class Message(
     @PrimaryKey val id: UUID = UUID.randomUUID(),
-    val iconResId: Int,  // 图标资源ID
+    val iconUrl: String = "android.resource://com.xfei33.quicktodo/drawable/icon", // 图标url
     val title: String, // 标题
     val sender: String, // 发送者
     val content: String, // 内容
