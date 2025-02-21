@@ -1,3 +1,5 @@
+package com.xfei33.quicktodo.model
+
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDateTime

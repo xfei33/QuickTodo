@@ -70,4 +70,7 @@ object AppModule {
 
     @Provides
     fun provideUserDao(appDatabase: AppDatabase) = appDatabase.userDao()
+
+    @Provides
+    fun provideFocusSessionDao(appDatabase: AppDatabase) = appDatabase.focusSessionDao()
 }
