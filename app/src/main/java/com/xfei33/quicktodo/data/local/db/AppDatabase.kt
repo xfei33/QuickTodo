@@ -8,11 +8,13 @@ import androidx.room.TypeConverters
 import com.xfei33.quicktodo.data.local.converter.Converters
 import com.xfei33.quicktodo.data.local.dao.MessageDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
+import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.model.Message
 import com.xfei33.quicktodo.model.Todo
+import com.xfei33.quicktodo.model.User
 
 @Database(
-    entities = [Todo::class, Message::class],
+    entities = [Todo::class, Message::class, User::class],
     version = 1,
     exportSchema = false
 )
@@ -21,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun todoDao(): TodoDao
     abstract fun messageDao(): MessageDao
+    abstract fun userDao(): UserDao
 
     companion object {
         @Volatile
