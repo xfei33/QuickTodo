@@ -142,7 +142,7 @@ enum class MessageCategory {
 fun MessageCardPreview() {
     MessageCard(
         message = Message(
-            iconUrl = "android.resource://com.xfei33.quicktodo/drawable/ic_message",
+            iconUrl = "android.resource://com.xfei33.quicktodo/drawable/icon",
             title = "标题",
             sender = "发送者",
             content = "内容",
