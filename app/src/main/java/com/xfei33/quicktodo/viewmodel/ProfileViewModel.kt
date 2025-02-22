@@ -37,9 +37,11 @@ class ProfileViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val userId = userPreferences.userId.first()!!
-            _user.value = userRepository.getUserById(userId).first()
-            loadFocusData(userId)
-            getWeeklyCompletedTasks(userId)
+            userRepository.getUserById(userId).collect { user ->
+                _user.value = user
+                loadFocusData(userId)
+                getWeeklyCompletedTasks(userId)
+            }
         }
     }
 
