@@ -6,6 +6,7 @@ import com.xfei33.quicktodo.data.local.dao.FocusSessionDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
+import com.xfei33.quicktodo.data.repository.UserRepository
 import com.xfei33.quicktodo.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository,
     private val userDao: UserDao,
     private val todoDao: TodoDao,
     private val focusSessionDao: FocusSessionDao,
@@ -34,12 +36,8 @@ class ProfileViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val userId = userPreferences.userId.first()
-            if (userId == 0L) {
-                _user.value = User(id = userId)
-            } else {
-                _user.value = userDao.getUserById(userId!!).first()
-            }
+            val userId = userPreferences.userId.first()!!
+            _user.value = userRepository.getUserById(userId).first()
             loadFocusData(userId)
             getWeeklyCompletedTasks(userId)
         }
@@ -105,24 +103,6 @@ class ProfileViewModel @Inject constructor(
                 completedTasks.add(record?.completedCount ?: 0) // 如果没有记录则为0
             }
             _weeklyCompletedTasks.value = completedTasks // 更新状态流
-        }
-    }
-
-    fun updateCreditsForTaskCompletion() {
-        viewModelScope.launch {
-            user.value?.let { currentUser ->
-                currentUser.addCredits(10) // 每完成一个任务 +10 积分
-                userDao.updateUser(currentUser) // 更新数据库中的用户信息
-            }
-        }
-    }
-
-    fun updateCreditsForFocusTime(minutes: Int) {
-        viewModelScope.launch {
-            user.value?.let { currentUser ->
-                currentUser.addCredits(minutes) // 每专注一分钟 +1 积分
-                userDao.updateUser(currentUser) // 更新数据库中的用户信息
-            }
         }
     }
 } 

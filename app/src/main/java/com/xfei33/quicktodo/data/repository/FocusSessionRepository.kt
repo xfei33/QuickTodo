@@ -14,7 +14,8 @@ import javax.inject.Singleton
 @Singleton
 class FocusSessionRepository @Inject constructor(
     private val focusSessionDao: FocusSessionDao,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val userRepository: UserRepository
 ) {
     private val _currentSession = MutableStateFlow<FocusSession?>(null)
     val currentSession = _currentSession.asStateFlow()
@@ -37,7 +38,7 @@ class FocusSessionRepository @Inject constructor(
                 duration = Duration.between(session.startTime, LocalDateTime.now()).toMillis()
             )
             focusSessionDao.update(updatedSession) // 或者使用 update 方法
-            userDao.addCredits(updatedSession.userId, (updatedSession.duration / 60000).toInt())
+            userRepository.addCredits(updatedSession.userId, (updatedSession.duration / 60000).toInt())
             _currentSession.value = null
         }
     }

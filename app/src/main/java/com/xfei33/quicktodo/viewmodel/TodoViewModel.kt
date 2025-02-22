@@ -10,6 +10,7 @@ import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.repository.TodoRepository
+import com.xfei33.quicktodo.data.repository.UserRepository
 import com.xfei33.quicktodo.model.Todo
 import com.xfei33.quicktodo.model.TodoRecord
 import com.xfei33.quicktodo.worker.NotificationWorker
@@ -31,7 +32,8 @@ class TodoViewModel @Inject constructor(
     private val userDao: UserDao,
     private val userPreferences: UserPreferences,
     private val todoRepository: TodoRepository,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _todos = MutableStateFlow<List<Todo>>(emptyList())
@@ -117,9 +119,9 @@ class TodoViewModel @Inject constructor(
                 todoDao.insertOrUpdate(updatedRecord)
 
                 if (currentTodo.completed) {
-                    userDao.addCredits(userId.value, 10)
+                    userRepository.addCredits(userId.value, 10)
                 } else {
-                    userDao.addCredits(userId.value, -10)
+                    userRepository.addCredits(userId.value, -10)
                 }
             }
         }

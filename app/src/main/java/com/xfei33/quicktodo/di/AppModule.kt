@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.xfei33.quicktodo.data.local.dao.MessageDao
 import com.xfei33.quicktodo.data.local.dao.TodoDao
+import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.local.db.AppDatabase
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.client.RetrofitClient
 import com.xfei33.quicktodo.data.repository.MessageRepository
 import com.xfei33.quicktodo.data.repository.TodoRepository
+import com.xfei33.quicktodo.data.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,4 +75,7 @@ object AppModule {
 
     @Provides
     fun provideFocusSessionDao(appDatabase: AppDatabase) = appDatabase.focusSessionDao()
+
+    @Provides
+    fun provideUserRepository(userDao: UserDao) = UserRepository(userDao)
 }
