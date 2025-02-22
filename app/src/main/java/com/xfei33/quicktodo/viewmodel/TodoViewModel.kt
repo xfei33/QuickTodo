@@ -11,6 +11,7 @@ import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.repository.TodoRepository
 import com.xfei33.quicktodo.model.Todo
+import com.xfei33.quicktodo.model.TodoRecord
 import com.xfei33.quicktodo.worker.NotificationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -101,10 +103,24 @@ class TodoViewModel @Inject constructor(
     // 切换todo的完成状态
     fun updateTodoCompletionStatus(todo: Todo) {
         viewModelScope.launch {
-            todo.completed = !todo.completed
-            todoRepository.updateTodo(todo)
-            if (todo.completed) {
-                userDao.addCredits(userId.value, 10)
+            withContext(Dispatchers.IO) {
+                val currentTodo = todoDao.getTodoById(todo.id) ?: return@withContext
+                currentTodo.completed = !currentTodo.completed
+                todoRepository.updateTodo(currentTodo)
+
+                // 使用 LocalDate 获取当天记录
+                val today = LocalDate.now()
+                val todayRecord = todoDao.getTodayRecord(currentTodo.userId, today) ?: TodoRecord(userId = currentTodo.userId)
+
+                // 更新完成数量
+                val updatedRecord = todayRecord.copy(completedCount = todayRecord.completedCount + if (currentTodo.completed) 1 else -1)
+                todoDao.insertOrUpdate(updatedRecord)
+
+                if (currentTodo.completed) {
+                    userDao.addCredits(userId.value, 10)
+                } else {
+                    userDao.addCredits(userId.value, -10)
+                }
             }
         }
     }

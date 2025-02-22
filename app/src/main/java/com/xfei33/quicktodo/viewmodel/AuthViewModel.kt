@@ -2,10 +2,12 @@ package com.xfei33.quicktodo.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.data.remote.api.ApiService
 import com.xfei33.quicktodo.data.remote.api.AuthRequest
 import com.xfei33.quicktodo.data.repository.TodoRepository
+import com.xfei33.quicktodo.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +23,8 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val apiService: ApiService,
     val userPreferences: UserPreferences,
-    private val todoRepository: TodoRepository
+    private val todoRepository: TodoRepository,
+    private val userDao: UserDao
 ) : ViewModel() {
     // 用户id
     private val _userId = MutableStateFlow<Long?>(null)
@@ -114,6 +117,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.saveIsFirstLaunch(false)
             userPreferences.saveUserId(0L)
+            val user: User = User(0L)
+            userDao.insertUser(user)
         }
     }
 
