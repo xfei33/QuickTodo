@@ -3,6 +3,7 @@ package com.xfei33.quicktodo.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xfei33.quicktodo.data.local.dao.FocusSessionDao
+import com.xfei33.quicktodo.data.local.dao.TodoDao
 import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.data.preferences.UserPreferences
 import com.xfei33.quicktodo.model.User
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userDao: UserDao,
+    private val todoDao: TodoDao,
     private val focusSessionDao: FocusSessionDao,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
@@ -27,9 +29,11 @@ class ProfileViewModel @Inject constructor(
     private val _focusData = MutableStateFlow(List(24) { 0 })
     val focusData: StateFlow<List<Int>> = _focusData
 
+    private val _weeklyCompletedTasks = MutableStateFlow<List<Int>>(List(7) { 0 })
+    val weeklyCompletedTasks: StateFlow<List<Int>> = _weeklyCompletedTasks
+
     init {
         viewModelScope.launch {
-            println("##################################################")
             val userId = userPreferences.userId.first()
             if (userId == 0L) {
                 _user.value = User(id = userId)
@@ -37,48 +41,88 @@ class ProfileViewModel @Inject constructor(
                 _user.value = userDao.getUserById(userId!!).first()
             }
             loadFocusData(userId)
+            getWeeklyCompletedTasks(userId)
         }
     }
 
-    private suspend fun loadFocusData(userId: Long) {
-        // 获取今天的开始时间和结束时间
-        val today = LocalDate.now()
-        val startOfDay = today.atStartOfDay()
-        val endOfDay = today.plusDays(1).atStartOfDay()
-        println("#############################startOfDay: $startOfDay, endOfDay: $endOfDay")
+    private fun loadFocusData(userId: Long) {
+        viewModelScope.launch {
+            // 获取今天的开始时间和结束时间
+            val today = LocalDate.now()
+            val startOfDay = today.atStartOfDay()
+            val endOfDay = today.plusDays(1).atStartOfDay()
 
-        focusSessionDao.getFocusSessionsByUserIdAndTimeRange(
-            userId,
-            startOfDay,
-            endOfDay
-        ).collect { sessions ->
-            val focusMinutes = MutableList(24) { 0 } // 每小时的专注分钟数
-            
-            sessions.forEach { session ->
-                val startTime = session.startTime
-                val endTime = session.endTime
-                
-                // 计算每个小时的专注时间（分钟）
-                var currentHour = startTime
-                while (currentHour.isBefore(endTime)) {
-                    val hourIndex = currentHour.hour
-                    val minutesInThisHour = when {
-                        currentHour.hour == startTime.hour && currentHour.hour == endTime.hour -> 
-                            endTime.minute - startTime.minute
-                        currentHour.hour == startTime.hour -> 
-                            60 - startTime.minute
-                        currentHour.hour == endTime.hour -> 
-                            endTime.minute
-                        else -> 
-                            60
-                    }
-                    focusMinutes[hourIndex] += minutesInThisHour
-                    currentHour = currentHour.plusHours(1)
+            focusSessionDao.getFocusSessionsByUserIdAndTimeRange(
+                userId,
+                startOfDay,
+                endOfDay
+            ).collect { sessions ->
+                val focusMinutes = MutableList(24) { 0 } // 每小时的专注分钟数
+                if (sessions.isEmpty()) {
+                    // 如果没有会话记录，直接更新 focusData
+                    _focusData.value = focusMinutes
+                    return@collect // 结束收集
                 }
+                sessions.forEach { session ->
+                    val startTime = session.startTime
+                    val endTime = session.endTime
 
-                println("focusMinutes: $focusMinutes" + " session: $session")
+                    // 计算每个小时的专注时间（分钟）
+                    var currentHour = startTime
+                    while (currentHour.isBefore(endTime)) {
+                        val hourIndex = currentHour.hour
+                        val minutesInThisHour = when {
+                            currentHour.hour == startTime.hour && currentHour.hour == endTime.hour ->
+                                endTime.minute - startTime.minute
+
+                            currentHour.hour == startTime.hour ->
+                                60 - startTime.minute
+
+                            currentHour.hour == endTime.hour ->
+                                endTime.minute
+
+                            else ->
+                                60
+                        }
+                        focusMinutes[hourIndex] += minutesInThisHour
+                        currentHour = currentHour.plusHours(1)
+                    }
+                }
+                _focusData.value = focusMinutes
             }
-            _focusData.value = focusMinutes
+        }
+    }
+
+    fun getWeeklyCompletedTasks(userId: Long) {
+        viewModelScope.launch {
+            val today = LocalDate.now()
+            val startOfWeek = today.minusDays(6) // 获取一周的开始日期
+            val completedTasks = mutableListOf<Int>()
+
+            for (day in 0..6) {
+                val date = startOfWeek.plusDays(day.toLong())
+                val record = todoDao.getTodayRecord(userId, date) // 获取当天的记录
+                completedTasks.add(record?.completedCount ?: 0) // 如果没有记录则为0
+            }
+            _weeklyCompletedTasks.value = completedTasks // 更新状态流
+        }
+    }
+
+    fun updateCreditsForTaskCompletion() {
+        viewModelScope.launch {
+            user.value?.let { currentUser ->
+                currentUser.addCredits(10) // 每完成一个任务 +10 积分
+                userDao.updateUser(currentUser) // 更新数据库中的用户信息
+            }
+        }
+    }
+
+    fun updateCreditsForFocusTime(minutes: Int) {
+        viewModelScope.launch {
+            user.value?.let { currentUser ->
+                currentUser.addCredits(minutes) // 每专注一分钟 +1 积分
+                userDao.updateUser(currentUser) // 更新数据库中的用户信息
+            }
         }
     }
 } 

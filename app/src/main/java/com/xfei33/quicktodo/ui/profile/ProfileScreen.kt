@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -85,38 +86,38 @@ fun TimeDistributionChart(
             val verticalLineColor = colorScheme.onSurface.copy(alpha = 0.2f) // 垂直分割线颜色
             val horizontalLineColor = colorScheme.onSurface.copy(alpha = 0.2f) // 水平分割线颜色
             
-            // 绘制纵坐标分割线
-            val yLabels = listOf(15, 30, 45, 60)
-            yLabels.forEach { label ->
-                val yPosition = height - (label.toFloat() / maxMinutes) * height
-                drawLine(
-                    color = verticalLineColor,
-                    start = Offset(0f, yPosition),
-                    end = Offset(width, yPosition),
-                    strokeWidth = 1f
-                )
-            }
-
-            // 绘制横坐标分割线
-            for (hour in 0 until focusData.size) {
-                val xPosition = (hour * barWidth) + (barWidth / 2) // 调整位置
-                drawLine(
-                    color = horizontalLineColor,
-                    start = Offset(xPosition, 0f),
-                    end = Offset(xPosition, height),
-                    strokeWidth = 1f
-                )
-            }
+//            // 绘制纵坐标分割线
+//            val yLabels = listOf(15, 30, 45, 60)
+//            yLabels.forEach { label ->
+//                val yPosition = height - (label.toFloat() / maxMinutes) * height
+//                drawLine(
+//                    color = verticalLineColor,
+//                    start = Offset(0f, yPosition),
+//                    end = Offset(width, yPosition),
+//                    strokeWidth = 1f
+//                )
+//            }
+//
+//            // 绘制横坐标分割线
+//            for (hour in 0 until focusData.size) {
+//                val xPosition = (hour * barWidth) + (barWidth / 2) // 调整位置
+//                drawLine(
+//                    color = horizontalLineColor,
+//                    start = Offset(xPosition, 0f),
+//                    end = Offset(xPosition, height),
+//                    strokeWidth = 1f
+//                )
+//            }
 
             // 绘制数据柱状图
             focusData.forEachIndexed { hour, minutes ->
-                val x = (hour * barWidth) + (barWidth / 2) // 调整柱状图位置
+                val x = hour * (barWidth + barWidth/23) // 调整柱状图位置
                 val barHeight = (minutes.toFloat() / maxMinutes) * height
                 
                 drawRect(
                     color = colorScheme.primary.copy(alpha = 0.7f),
                     topLeft = Offset(x, height - barHeight),
-                    size = Size(barWidth * 0.8f, barHeight) // 增加柱状图间距
+                    size = Size(barWidth, barHeight) // 增加柱状图间距
                 )
             }
 
@@ -140,7 +141,7 @@ fun TimeDistributionChart(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomStart)
-                .padding(top = 8.dp),
+                .padding(top = 8.dp, ),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             for (hour in 0..24 step 6) {
@@ -148,7 +149,6 @@ fun TimeDistributionChart(
                     text = String.format("%02d:00", hour),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
-                        .padding(start = if (hour == 0) 0.dp else 4.dp)
                         .offset(y = 15.dp)
                 )
             }
@@ -172,6 +172,7 @@ fun ProfileScreen(
 ) {
     val user by viewModel.user.collectAsState()
     val focusData by viewModel.focusData.collectAsState()
+    val weeklyCompletedTasks by viewModel.weeklyCompletedTasks.collectAsState()
 
     user?.let { currentUser ->
         Scaffold(
@@ -200,10 +201,9 @@ fun ProfileScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically // 垂直居中对齐
                     ) {
                         // 用户头像带边框
                         Box(
@@ -231,33 +231,37 @@ fun ProfileScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.width(16.dp)) // 添加间距
 
-                        // 用户昵称
-                        Text(
-                            text = currentUser.nickname,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // 碳排放减少量
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                        // 其他信息
+                        Column(
+                            modifier = Modifier.weight(1f), // 让其他信息占据剩余空间
+                            horizontalAlignment = Alignment.Start // 左对齐
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_leaves),
-                                contentDescription = "碳排放图标",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            // 用户昵称
                             Text(
-                                text = "减少碳排放量：${currentUser.credits}kg",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 8.dp)
+                                text = currentUser.nickname,
+                                style = MaterialTheme.typography.titleLarge
                             )
+
+                            Spacer(modifier = Modifier.height(8.dp)) // 添加间距
+
+                            // 碳排放减少量
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_leaves),
+                                    contentDescription = "碳排放图标",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = "减少碳排放量：${currentUser.credits}g",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -278,11 +282,37 @@ fun ProfileScreen(
                         Text(
                             text = "今日专注时间分布",
                             style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                         
                         TimeDistributionChart(
                             focusData = focusData,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 添加每周完成任务数量的图表
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "最近7天完成任务数量",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        WeeklyCompletedTasksChart(
+                            completedTasks = weeklyCompletedTasks,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
