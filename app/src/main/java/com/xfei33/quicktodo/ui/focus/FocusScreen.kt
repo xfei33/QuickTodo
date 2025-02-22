@@ -8,7 +8,6 @@ import android.os.IBinder
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -57,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.xfei33.quicktodo.service.TimerService
 import com.xfei33.quicktodo.viewmodel.FocusViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -80,6 +77,7 @@ fun FocusScreen(
     val selectedMinutes by viewModel.selectedMinutes.collectAsState()
     val isCountDown by viewModel.isCountDown.collectAsState()
     val pausedSeconds by viewModel.pausedSeconds.collectAsState()
+    val userId by viewModel.userId.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -185,7 +183,8 @@ fun FocusScreen(
                     timerState = timerState,
                     isCountDown = isCountDown,
                     selectedMinutes = selectedMinutes,
-                    timerService = timerService
+                    timerService = timerService,
+                    userId = userId!!
                 )
             }
         }
@@ -350,20 +349,22 @@ fun ActionButton(
     timerState: TimerState,
     isCountDown: Boolean,
     selectedMinutes: Float,
-    timerService: TimerService?
+    timerService: TimerService?,
+    userId: Long = 0L
 ) {
+    val viewModel = hiltViewModel<FocusViewModel>()
     Button(
-        onClick = {
-            when (timerState) {
-                TimerState.IDLE -> {
-                    val totalSeconds = selectedMinutes.toInt() * 60L
-                    timerService?.startTimer(totalSeconds, isCountDown)
-                }
-                TimerState.RUNNING, TimerState.PAUSED -> {
-                    timerService?.stopTimer()
-                }
+    onClick = {
+        when (timerState) {
+            TimerState.IDLE -> {
+                val totalSeconds = selectedMinutes.toInt() * 60L
+                timerService?.startTimer(totalSeconds, isCountDown, userId)
             }
-        },
+            TimerState.RUNNING, TimerState.PAUSED -> {
+                timerService?.stopTimer()
+            }
+        }
+    },
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
@@ -408,56 +409,7 @@ enum class TimerState {
 }
 
 fun formatTime(seconds: Long): String {
-    val minutes = seconds / 60
-    val remainingSeconds = seconds % 60
+    val minutes = maxOf(0, seconds / 60)
+    val remainingSeconds = maxOf(0, seconds % 60)
     return String.format("%02d:%02d", minutes, remainingSeconds)
-}
-
-@Composable
-private fun QuickTimeButton(
-    minutes: Int,
-    selectedMinutes: Float,
-    onTimeSelected: (Int) -> Unit
-) {
-    OutlinedButton(
-        onClick = { onTimeSelected(minutes) },
-        modifier = Modifier.padding(horizontal = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (selectedMinutes.toInt() == minutes)
-                MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        ),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selectedMinutes.toInt() == minutes)
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            else MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Text(
-            text = "${minutes}分钟",
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selectedMinutes.toInt() == minutes)
-                MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-    }
-}
-
-fun startTimer(scope: CoroutineScope, isCountDown: Boolean) {
-    var remainingSeconds = if (isCountDown) (25 * 60L) else 0L
-    val job = scope.launch {
-        while (true) {
-            delay(1000)
-            if (isCountDown) {
-                remainingSeconds--
-                if (remainingSeconds <= 0) {
-                    break
-                }
-            } else {
-                remainingSeconds++
-            }
-        }
-    }
 }

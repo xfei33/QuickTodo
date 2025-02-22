@@ -4,27 +4,33 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.content.pm.ServiceInfo
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.xfei33.quicktodo.MainActivity
 import com.xfei33.quicktodo.R
+import com.xfei33.quicktodo.data.repository.FocusSessionRepository
 import com.xfei33.quicktodo.notification.NotificationChannels
 import com.xfei33.quicktodo.ui.focus.TimerState
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class TimerService : Service() {
     private val binder = TimerBinder()
     private var timerJob: Job? = null
-    private val serviceScope = CoroutineScope(Dispatchers.Main)
+    private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
+
+    @Inject
+    lateinit var focusSessionRepository: FocusSessionRepository
 
     private val _remainingSeconds = MutableStateFlow(0L)
     val remainingSeconds: StateFlow<Long> = _remainingSeconds
@@ -50,30 +56,24 @@ class TimerService : Service() {
         notificationManager = getSystemService(NotificationManager::class.java)
     }
 
-    fun startTimer(totalSeconds: Long, isCountDown: Boolean) {
-        _timerState.value = TimerState.RUNNING
-        _isRunning.value = true
-        _remainingSeconds.value = if (isCountDown) totalSeconds else 0L
+    fun startTimer(totalSeconds: Long, isCountDown: Boolean, userId: Long) {
+        serviceScope.launch {
+            focusSessionRepository.startSession(userId)
+            _timerState.value = TimerState.RUNNING
+            _isRunning.value = true
+            _remainingSeconds.value = if (isCountDown) totalSeconds else 0L
 
-        notificationManager?.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIFICATION_ID, createNotification())
-        }
-
-        timerJob = serviceScope.launch {
-            while (true) {
+            while (_remainingSeconds.value > 0) {
                 delay(1000)
                 if (isCountDown) {
-                    _remainingSeconds.value = _remainingSeconds.value - 1
+                    _remainingSeconds.value--
                     if (_remainingSeconds.value <= 0) {
-                        stopTimer(true)
+                        _timerState.value = TimerState.IDLE
+                        focusSessionRepository.stopSession()
                         break
                     }
                 } else {
-                    _remainingSeconds.value = _remainingSeconds.value + 1
+                    _remainingSeconds.value++
                 }
                 updateNotification()
             }
@@ -87,7 +87,7 @@ class TimerService : Service() {
     }
 
     fun resumeTimer(seconds: Long, isCountDown: Boolean) {
-        startTimer(seconds, isCountDown)
+        startTimer(seconds, isCountDown, 0)
     }
 
     fun stopTimer(isNaturalEnd: Boolean = false) {
@@ -145,6 +145,11 @@ class TimerService : Service() {
 
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(COMPLETION_NOTIFICATION_ID, notification)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 
     companion object {
