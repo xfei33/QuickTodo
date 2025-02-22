@@ -13,10 +13,11 @@ import com.xfei33.quicktodo.data.local.dao.UserDao
 import com.xfei33.quicktodo.model.FocusSession
 import com.xfei33.quicktodo.model.Message
 import com.xfei33.quicktodo.model.Todo
+import com.xfei33.quicktodo.model.TodoRecord
 import com.xfei33.quicktodo.model.User
 
 @Database(
-    entities = [Todo::class, Message::class, User::class, FocusSession::class],
+    entities = [Todo::class, Message::class, User::class, FocusSession::class, TodoRecord::class],
     version = 1,
     exportSchema = false
 )

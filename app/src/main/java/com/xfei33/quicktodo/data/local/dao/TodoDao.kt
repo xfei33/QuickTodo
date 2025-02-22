@@ -3,10 +3,13 @@ package com.xfei33.quicktodo.data.local.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.xfei33.quicktodo.model.Todo
+import com.xfei33.quicktodo.model.TodoRecord
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -33,4 +36,10 @@ interface TodoDao {
 
     @Delete
     suspend fun delete(todo: Todo)
+
+    @Query("SELECT * FROM todo_record WHERE userId = :userId AND date(date) = :date")
+    suspend fun getTodayRecord(userId: Long, date: LocalDate): TodoRecord?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(todoRecord: TodoRecord)
 }

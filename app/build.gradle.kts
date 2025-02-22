@@ -99,7 +99,6 @@ dependencies {
     implementation (libs.androidx.work.runtime.ktx)
     ksp(libs.androidx.hilt.compiler)
 
-
     // coil
     implementation(libs.coil.kt.coil.compose)
 }

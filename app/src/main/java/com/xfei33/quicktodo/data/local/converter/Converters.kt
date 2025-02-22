@@ -1,6 +1,7 @@
 package com.xfei33.quicktodo.data.local.converter
 
 import androidx.room.TypeConverter
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
@@ -24,5 +25,15 @@ class Converters {
     @TypeConverter
     fun toUUID(uuid: String?): UUID? {
         return uuid?.let { UUID.fromString(it) }
+    }
+
+    @TypeConverter
+    fun fromLocalDate(value: String?): LocalDate? {
+        return value?.let { LocalDate.parse(it) }
+    }
+
+    @TypeConverter
+    fun localDateToString(date: LocalDate?): String? {
+        return date?.toString()
     }
 } 
